@@ -1,0 +1,61 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++ 编译 OpenCV 项目",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "-std=c++17",
+                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/ConfidenceCompute.cpp",
+                "${workspaceFolder}/ToolOneTestDemo.cpp",
+                "${workspaceFolder}/ToolTwoTestDemo.cpp",
+                "${workspaceFolder}/CostVolCompute.cpp",
+                "${workspaceFolder}/DataDeal.cpp",
+                "${workspaceFolder}/DepthComputeToolOne.cpp",
+                "${workspaceFolder}/DepthComputeToolTwo.cpp",
+                //"${workspaceFolder}/DisparityRefinement.cpp",
+                "${workspaceFolder}/GlobalOptimization.cpp",
+                "${workspaceFolder}/ImageRander.cpp",
+                "${workspaceFolder}/SceneDepthCompute.cpp",
+                "${workspaceFolder}/VirtualDepthCompute.cpp",
+                "${workspaceFolder}/CostVolFilter.cpp",
+                "${workspaceFolder}/DataParameter.cpp",
+                "${workspaceFolder}/CAST/STCA.cpp",
+                "${workspaceFolder}/CAST/StereoDisparity.cpp",
+                "${workspaceFolder}/CAST/StereoHelper.cpp",
+                "${workspaceFolder}/CAST/SegmentTree.cpp",
+                "${workspaceFolder}/CAST/Toolkit.cpp",
+                "${workspaceFolder}/CAST/ctmf.o",
+                "-o",
+                "${workspaceFolder}/bin/main",
+                "-I/usr/local/include/opencv4",
+                "-I${workspaceFolder}/gcov3",  // GCO 头文件路径
+                "-L/usr/local/lib",
+                "-lopencv_core",
+                "-lopencv_imgcodecs",
+                "-lopencv_highgui",
+                "-lopencv_imgproc",
+                "-L${workspaceFolder}/gcov3",  // GCO 库路径
+                "-lGCoptimization",             // 链接 GCO
+                "-I${workspaceFolder}/CAST",
+
+
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "OpenCV 项目编译任务"
+        }
+    ],
+    "version": "2.0.0"
+}

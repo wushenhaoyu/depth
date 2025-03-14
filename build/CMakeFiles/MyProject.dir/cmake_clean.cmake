@@ -1,0 +1,41 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/MyProject.dir/ConfidenceCompute.cpp.obj"
+  "CMakeFiles/MyProject.dir/ConfidenceCompute.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/CostVolCompute.cpp.obj"
+  "CMakeFiles/MyProject.dir/CostVolCompute.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/CostVolFilter.cpp.obj"
+  "CMakeFiles/MyProject.dir/CostVolFilter.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/DataDeal.cpp.obj"
+  "CMakeFiles/MyProject.dir/DataDeal.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/DataParameter.cpp.obj"
+  "CMakeFiles/MyProject.dir/DataParameter.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/DepthComputeToolOne.cpp.obj"
+  "CMakeFiles/MyProject.dir/DepthComputeToolOne.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/DepthComputeToolTwo.cpp.obj"
+  "CMakeFiles/MyProject.dir/DepthComputeToolTwo.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/DisparityRefinement.cpp.obj"
+  "CMakeFiles/MyProject.dir/DisparityRefinement.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/GlobalOptimization.cpp.obj"
+  "CMakeFiles/MyProject.dir/GlobalOptimization.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/ImageRander.cpp.obj"
+  "CMakeFiles/MyProject.dir/ImageRander.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/SceneDepthCompute.cpp.obj"
+  "CMakeFiles/MyProject.dir/SceneDepthCompute.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/ToolOneTestDemo.cpp.obj"
+  "CMakeFiles/MyProject.dir/ToolOneTestDemo.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/ToolTwoTestDemo.cpp.obj"
+  "CMakeFiles/MyProject.dir/ToolTwoTestDemo.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/VirtualDepthCompute.cpp.obj"
+  "CMakeFiles/MyProject.dir/VirtualDepthCompute.cpp.obj.d"
+  "CMakeFiles/MyProject.dir/main.cpp.obj"
+  "CMakeFiles/MyProject.dir/main.cpp.obj.d"
+  "MyProject.exe"
+  "MyProject.exe.manifest"
+  "MyProject.pdb"
+  "libMyProject.dll.a"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/MyProject.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

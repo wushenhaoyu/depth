@@ -1,0 +1,225 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\CANLC">
+      <UniqueIdentifier>{0e4bdc0a-6e9e-48e8-b5da-71d7b66fdb8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\CAST">
+      <UniqueIdentifier>{45a32325-e50c-4a06-ba4e-f518a0f3f0a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\gcov3">
+      <UniqueIdentifier>{a832d1c3-a1b9-4bc0-962c-aa7f7f274f7c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommFunc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfidenceCompute.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CostVolCompute.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CostVolFilter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DataDeal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DataParameter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthComputeToolOne.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthComputeToolTwo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DisparityRefinement.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalOptimization.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageRander.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneDepthCompute.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ToolOneTestDemo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ToolTwoTestDemo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualDepthCompute.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\ctmf.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\NLCCA.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\qx_basic.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\qx_mst_kruskals_image.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\qx_nonlocal_cost_aggregation.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CANLC\qx_tree_filter.h">
+      <Filter>源文件\CANLC</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\ctmf.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\disjoint-set.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\segment-graph.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\SegmentTree.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\STCA.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\StereoDisparity.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\StereoHelper.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="CAST\Toolkit.h">
+      <Filter>源文件\CAST</Filter>
+    </ClInclude>
+    <ClInclude Include="gcov3\block.h">
+      <Filter>源文件\gcov3</Filter>
+    </ClInclude>
+    <ClInclude Include="gcov3\energy.h">
+      <Filter>源文件\gcov3</Filter>
+    </ClInclude>
+    <ClInclude Include="gcov3\GCoptimization.h">
+      <Filter>源文件\gcov3</Filter>
+    </ClInclude>
+    <ClInclude Include="gcov3\graph.h">
+      <Filter>源文件\gcov3</Filter>
+    </ClInclude>
+    <ClInclude Include="gcov3\LinkedBlockList.h">
+      <Filter>源文件\gcov3</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ConfidenceCompute.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CostVolCompute.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CostVolFilter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataDeal.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataParameter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthComputeToolOne.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthComputeToolTwo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DisparityRefinement.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalOptimization.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageRander.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneDepthCompute.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolOneTestDemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolTwoTestDemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="VirtualDepthCompute.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\ctmf.c">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\NLCCA.cpp">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\qx_basic.cpp">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\qx_mst_kruskals_image.cpp">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\qx_nonlocal_cost_aggregation.cpp">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CANLC\qx_tree_filter.cpp">
+      <Filter>源文件\CANLC</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\ctmf.c">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\SegmentTree.cpp">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\STCA.cpp">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\StereoDisparity.cpp">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\StereoHelper.cpp">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="CAST\Toolkit.cpp">
+      <Filter>源文件\CAST</Filter>
+    </ClCompile>
+    <ClCompile Include="gcov3\GCoptimization.cpp">
+      <Filter>源文件\gcov3</Filter>
+    </ClCompile>
+    <ClCompile Include="gcov3\graph.cpp">
+      <Filter>源文件\gcov3</Filter>
+    </ClCompile>
+    <ClCompile Include="gcov3\LinkedBlockList.cpp">
+      <Filter>源文件\gcov3</Filter>
+    </ClCompile>
+    <ClCompile Include="gcov3\maxflow.cpp">
+      <Filter>源文件\gcov3</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

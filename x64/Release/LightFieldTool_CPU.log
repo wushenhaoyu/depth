@@ -1,0 +1,223 @@
+﻿生成启动时间为 2025/3/4 9:57:31。
+     1>项目“C:\work\LightFieldTool_CPU\LightFieldTool_CPU\LightFieldTool_CPU.vcxproj”在节点 2 上(Build 个目标)。
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(935,5): warning MSB8027: Two or more files with the name of ctmf.c will produce outputs to the same location. This can lead to an incorrect build result.  The files involved are CANLC\ctmf.c, CAST\ctmf.c.
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /GL /D NDEBUG /D _CONSOLE /D CV_IGNORE_DEBUG_BUILD_GUARD /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TC /errorReport:prompt CANLC\ctmf.c CAST\ctmf.c
+         ctmf.c
+         ctmf.c
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /GL /D NDEBUG /D _CONSOLE /D CV_IGNORE_DEBUG_BUILD_GUARD /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt CANLC\NLCCA.cpp CANLC\qx_basic.cpp CANLC\qx_mst_kruskals_image.cpp CANLC\qx_nonlocal_cost_aggregation.cpp CANLC\qx_tree_filter.cpp CAST\SegmentTree.cpp CAST\STCA.cpp CAST\StereoDisparity.cpp CAST\StereoHelper.cpp CAST\Toolkit.cpp ConfidenceCompute.cpp CostVolCompute.cpp CostVolFilter.cpp DataDeal.cpp DataParameter.cpp DepthComputeToolOne.cpp DepthComputeToolTwo.cpp DisparityRefinement.cpp gcov3\GCoptimization.cpp gcov3\graph.cpp gcov3\LinkedBlockList.cpp gcov3\maxflow.cpp GlobalOptimization.cpp ImageRander.cpp main.cpp SceneDepthCompute.cpp ToolOneTestDemo.cpp ToolTwoTestDemo.cpp VirtualDepthCompute.cpp
+         NLCCA.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(67): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(70): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>CANLC\NLCCA.cpp(82): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         qx_basic.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(67): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(70): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>CANLC\qx_basic.cpp(195): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+     1>CANLC\qx_basic.cpp(230): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+         qx_mst_kruskals_image.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(67): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(70): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>CANLC\qx_mst_kruskals_image.cpp(48): warning C4101: “x0”: 未引用的局部变量
+     1>CANLC\qx_mst_kruskals_image.cpp(73): warning C4101: “x0”: 未引用的局部变量
+         qx_nonlocal_cost_aggregation.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(67): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(70): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>CANLC\qx_nonlocal_cost_aggregation.cpp(179): warning C4244: “=”: 从“size_t”转换到“double”，可能丢失数据
+     1>CANLC\qx_nonlocal_cost_aggregation.cpp(226): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>CANLC\qx_nonlocal_cost_aggregation.cpp(230): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>CANLC\qx_nonlocal_cost_aggregation.cpp(234): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         qx_tree_filter.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(67): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\canlc\qx_basic.h(70): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+         SegmentTree.cpp
+         STCA.cpp
+     1>CAST\STCA.cpp(50): warning C4305: “参数”: 从“double”到“float”截断
+     1>CAST\STCA.cpp(24): warning C4101: “dispHelper”: 未引用的局部变量
+         StereoDisparity.cpp
+         StereoHelper.cpp
+     1>CAST\StereoHelper.cpp(132): warning C4244: “=”: 从“size_t”转换到“float”，可能丢失数据
+         Toolkit.cpp
+     1>CAST\Toolkit.cpp(41): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+         ConfidenceCompute.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>ConfidenceCompute.cpp(11): warning C4005: “PI”: 宏重定义
+                 c:\work\lightfieldtool_cpu\lightfieldtool_cpu\CommFunc.h(36) : 参见“PI”的前一个定义
+     1>ConfidenceCompute.cpp(66): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(67): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(68): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(69): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(106): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(110): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(169): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(172): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(203): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(206): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(211): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>ConfidenceCompute.cpp(251): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ConfidenceCompute.cpp(254): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+         CostVolCompute.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>CostVolCompute.cpp(75): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolCompute.cpp(78): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolCompute.cpp(151): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>CostVolCompute.cpp(157): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>CostVolCompute.cpp(168): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>CostVolCompute.cpp(169): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>CostVolCompute.cpp(188): warning C4305: “*=”: 从“double”到“float”截断
+     1>CostVolCompute.cpp(205): warning C4305: “*=”: 从“double”到“float”截断
+         CostVolFilter.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>C:\work\opencv\build\include\opencv2/gpu/gpu.hpp(1821): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+     1>CostVolFilter.cpp(33): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(34): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(35): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(36): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(79): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(80): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(81): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(82): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(121): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(122): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(123): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>CostVolFilter.cpp(124): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+         DataDeal.cpp
+         DataParameter.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>DataParameter.cpp(91): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>DataParameter.cpp(92): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>DataParameter.cpp(116): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(117): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(119): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(120): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(132): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(174): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(179): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(295): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(296): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(297): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>DataParameter.cpp(298): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+         DepthComputeToolOne.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         DepthComputeToolTwo.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         DisparityRefinement.cpp
+         GCoptimization.cpp
+         graph.cpp
+         正在编译...
+         LinkedBlockList.cpp
+         maxflow.cpp
+         GlobalOptimization.cpp
+         ImageRander.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>ImageRander.cpp(45): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(46): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(50): warning C4244: “=”: 从“const double”转换到“float”，可能丢失数据
+     1>ImageRander.cpp(133): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(134): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(136): warning C4244: “=”: 从“const double”转换到“float”，可能丢失数据
+     1>ImageRander.cpp(172): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(174): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(175): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(177): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>ImageRander.cpp(178): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+         main.cpp
+         SceneDepthCompute.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(144): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>SceneDepthCompute.cpp(145): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>SceneDepthCompute.cpp(237): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(238): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(239): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(240): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(245): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(246): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(254): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(255): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>SceneDepthCompute.cpp(261): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         ToolOneTestDemo.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+         ToolTwoTestDemo.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>ToolTwoTestDemo.cpp(99): warning C4305: “初始化”: 从“double”到“float”截断
+     1>ToolTwoTestDemo.cpp(143): warning C4305: “初始化”: 从“double”到“float”截断
+     1>ToolTwoTestDemo.cpp(185): warning C4305: “初始化”: 从“double”到“float”截断
+         VirtualDepthCompute.cpp
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>VirtualDepthCompute.cpp(30): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(33): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(43): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>VirtualDepthCompute.cpp(45): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>VirtualDepthCompute.cpp(46): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+     1>VirtualDepthCompute.cpp(90): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(91): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(92): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(93): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(106): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(107): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+     1>VirtualDepthCompute.cpp(140): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\work\LightFieldTool_CPU\x64\Release\LightFieldTool_CPU.exe" /INCREMENTAL:NO /NOLOGO opencv_calib3d2413d.lib opencv_contrib2413d.lib opencv_core2413d.lib opencv_features2d2413d.lib opencv_flann2413d.lib opencv_gpu2413d.lib opencv_highgui2413d.lib opencv_imgproc2413d.lib opencv_legacy2413d.lib opencv_ml2413d.lib opencv_nonfree2413d.lib opencv_objdetect2413d.lib opencv_ocl2413d.lib opencv_photo2413d.lib opencv_stitching2413d.lib opencv_superres2413d.lib opencv_ts2413d.lib opencv_video2413d.lib opencv_videostab2413d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\work\LightFieldTool_CPU\x64\Release\LightFieldTool_CPU.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\work\LightFieldTool_CPU\x64\Release\LightFieldTool_CPU.lib" /MACHINE:X64 x64\Release\ctmf.obj
+         x64\Release\NLCCA.obj
+         x64\Release\qx_basic.obj
+         x64\Release\qx_mst_kruskals_image.obj
+         x64\Release\qx_nonlocal_cost_aggregation.obj
+         x64\Release\qx_tree_filter.obj
+         x64\Release\ctmf.obj
+         x64\Release\SegmentTree.obj
+         x64\Release\STCA.obj
+         x64\Release\StereoDisparity.obj
+         x64\Release\StereoHelper.obj
+         x64\Release\Toolkit.obj
+         x64\Release\ConfidenceCompute.obj
+         x64\Release\CostVolCompute.obj
+         x64\Release\CostVolFilter.obj
+         x64\Release\DataDeal.obj
+         x64\Release\DataParameter.obj
+         x64\Release\DepthComputeToolOne.obj
+         x64\Release\DepthComputeToolTwo.obj
+         x64\Release\DisparityRefinement.obj
+         x64\Release\GCoptimization.obj
+         x64\Release\graph.obj
+         x64\Release\LinkedBlockList.obj
+         x64\Release\maxflow.obj
+         x64\Release\GlobalOptimization.obj
+         x64\Release\ImageRander.obj
+         x64\Release\main.obj
+         x64\Release\SceneDepthCompute.obj
+         x64\Release\ToolOneTestDemo.obj
+         x64\Release\ToolTwoTestDemo.obj
+         x64\Release\VirtualDepthCompute.obj
+     1>LINK : fatal error LNK1181: 无法打开输入文件“opencv_calib3d2413d.lib”
+     1>已完成生成项目“C:\work\LightFieldTool_CPU\LightFieldTool_CPU\LightFieldTool_CPU.vcxproj”(Build 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:18.65

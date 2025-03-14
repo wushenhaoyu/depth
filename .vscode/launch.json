@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug OpenCV Project",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/main",  // 可执行文件路径
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: g++ 编译 OpenCV 项目"  // 指定预编译任务
+        }
+    ]
+}

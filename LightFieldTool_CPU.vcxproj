@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5DB95B25-F470-4097-9764-6C0374F94C27}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>LightFieldTool_CPU</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>F:\work\opencv454\opencv\build\include;F:\work\opencv454\opencv\build\include\opencv2;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\work\opencv454\opencv\build\x64\vc15\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\work\opencv\build\include\opencv2;C:\work\opencv\build\include\opencv;C:\work\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\work\opencv\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opencv_world454d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;CV_IGNORE_DEBUG_BUILD_GUARD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opencv_calib3d2413d.lib;opencv_contrib2413d.lib;opencv_core2413d.lib;opencv_features2d2413d.lib;opencv_flann2413d.lib;opencv_gpu2413d.lib;opencv_highgui2413d.lib;opencv_imgproc2413d.lib;opencv_legacy2413d.lib;opencv_ml2413d.lib;opencv_nonfree2413d.lib;opencv_objdetect2413d.lib;opencv_ocl2413d.lib;opencv_photo2413d.lib;opencv_stitching2413d.lib;opencv_superres2413d.lib;opencv_ts2413d.lib;opencv_video2413d.lib;opencv_videostab2413d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="CANLC\ctmf.h" />
+    <ClInclude Include="CANLC\NLCCA.h" />
+    <ClInclude Include="CANLC\qx_basic.h" />
+    <ClInclude Include="CANLC\qx_mst_kruskals_image.h" />
+    <ClInclude Include="CANLC\qx_nonlocal_cost_aggregation.h" />
+    <ClInclude Include="CANLC\qx_tree_filter.h" />
+    <ClInclude Include="CAST\ctmf.h" />
+    <ClInclude Include="CAST\disjoint-set.h" />
+    <ClInclude Include="CAST\segment-graph.h" />
+    <ClInclude Include="CAST\SegmentTree.h" />
+    <ClInclude Include="CAST\STCA.h" />
+    <ClInclude Include="CAST\StereoDisparity.h" />
+    <ClInclude Include="CAST\StereoHelper.h" />
+    <ClInclude Include="CAST\Toolkit.h" />
+    <ClInclude Include="CommFunc.h" />
+    <ClInclude Include="ConfidenceCompute.h" />
+    <ClInclude Include="CostVolCompute.h" />
+    <ClInclude Include="CostVolFilter.h" />
+    <ClInclude Include="DataDeal.h" />
+    <ClInclude Include="DataParameter.h" />
+    <ClInclude Include="DepthComputeToolOne.h" />
+    <ClInclude Include="DepthComputeToolTwo.h" />
+    <ClInclude Include="DisparityRefinement.h" />
+    <ClInclude Include="gcov3\block.h" />
+    <ClInclude Include="gcov3\energy.h" />
+    <ClInclude Include="gcov3\GCoptimization.h" />
+    <ClInclude Include="gcov3\graph.h" />
+    <ClInclude Include="gcov3\LinkedBlockList.h" />
+    <ClInclude Include="GlobalOptimization.h" />
+    <ClInclude Include="ImageRander.h" />
+    <ClInclude Include="SceneDepthCompute.h" />
+    <ClInclude Include="ToolOneTestDemo.h" />
+    <ClInclude Include="ToolTwoTestDemo.h" />
+    <ClInclude Include="VirtualDepthCompute.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CANLC\ctmf.c" />
+    <ClCompile Include="CANLC\NLCCA.cpp" />
+    <ClCompile Include="CANLC\qx_basic.cpp" />
+    <ClCompile Include="CANLC\qx_mst_kruskals_image.cpp" />
+    <ClCompile Include="CANLC\qx_nonlocal_cost_aggregation.cpp" />
+    <ClCompile Include="CANLC\qx_tree_filter.cpp" />
+    <ClCompile Include="CAST\ctmf.c" />
+    <ClCompile Include="CAST\SegmentTree.cpp" />
+    <ClCompile Include="CAST\STCA.cpp" />
+    <ClCompile Include="CAST\StereoDisparity.cpp" />
+    <ClCompile Include="CAST\StereoHelper.cpp" />
+    <ClCompile Include="CAST\Toolkit.cpp" />
+    <ClCompile Include="ConfidenceCompute.cpp" />
+    <ClCompile Include="CostVolCompute.cpp" />
+    <ClCompile Include="CostVolFilter.cpp" />
+    <ClCompile Include="DataDeal.cpp" />
+    <ClCompile Include="DataParameter.cpp" />
+    <ClCompile Include="DepthComputeToolOne.cpp" />
+    <ClCompile Include="DepthComputeToolTwo.cpp" />
+    <ClCompile Include="DisparityRefinement.cpp" />
+    <ClCompile Include="gcov3\GCoptimization.cpp" />
+    <ClCompile Include="gcov3\graph.cpp" />
+    <ClCompile Include="gcov3\LinkedBlockList.cpp" />
+    <ClCompile Include="gcov3\maxflow.cpp" />
+    <ClCompile Include="GlobalOptimization.cpp" />
+    <ClCompile Include="ImageRander.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="SceneDepthCompute.cpp" />
+    <ClCompile Include="ToolOneTestDemo.cpp" />
+    <ClCompile Include="ToolTwoTestDemo.cpp" />
+    <ClCompile Include="VirtualDepthCompute.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
