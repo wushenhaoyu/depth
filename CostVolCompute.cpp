@@ -14,119 +14,84 @@ CostVolCompute::~CostVolCompute()
 
 }
 
-void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat *costVol) {
-    RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
 
-    // 将输入图像上传到 GPU
-    cv::cuda::GpuMat gpuInputImg;
-    dataParameter.m_inputImg.convertTo(gpuInputImg, CV_32FC3, 1.0 / 255.0);
 
-    // 在 GPU 上初始化 costVol
-    cv::cuda::GpuMat* gpuCostVol = new cv::cuda::GpuMat[disparityParameter.m_disNum];
-    for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
-        gpuCostVol[mIdx] = cv::cuda::GpuMat(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
-        gpuCostVol[mIdx].setTo(cv::Scalar(0));  // 初始化为零
-    }
+void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat *costVol) //���205�����ݣ�����ֻ���ǳ���������
+{//��������Rawͼ���Ӧ��dataCost
+	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
+	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
+	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
 
-    // 在 GPU 上计算梯度
-    cv::cuda::GpuMat gpuGray, gpuGrad;
-    cv::cuda::cvtColor(gpuInputImg, gpuGray, COLOR_RGB2GRAY);
-    cv::cuda::Sobel(gpuGray, gpuGrad, CV_32F, 1, 0, 1);
-    gpuGrad += 0.5;
+	dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC3, 1 / 255.0f);   //��ͨ����ɫͼ����
+	//dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC1, 1 / 255.0f);	//��ͨ����ɫͼ�����������У�����������������ж�Ҫ�ģ�
+	cv::Mat im_gray, tmp;
+	m_inputImg.convertTo(tmp, CV_32F);
+	cv::cvtColor(tmp, im_gray, COLOR_RGB2GRAY); //���Ƴ��������Ϊ��������Ҫ�����Ҷ�ͼ��Ȼ��������,��Ϊ������ɫ�ݶȷ�����Ҫ�õ���
 
-    // 调用 GPU 加速的计算函数
-    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
-        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
-            costVolDataCompute(gpuCostVol, y, x, rawImageParameter, microImageParameter, disparityParameter, gpuInputImg, gpuGrad);
-        }
-    }
+	cv::Mat dst_x, dst_y;
+	/*
+	Sobel(im_gray, dst_x, CV_32F, 1, 0);
+	Sobel(im_gray, dst_y, CV_32F, 0, 1);
+	addWeighted(dst_x, 0.5, dst_y, 0.5, 0, m_gradImg);
+	*/
+	
+	
+	
+	
+	cv::Sobel(im_gray, m_gradImg, CV_32F, 1, 0, 1);
+	m_gradImg += 0.5;
 
-    // 将结果从 GPU 下载到 CPU
-    for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
-        gpuCostVol[mIdx].download(costVol[mIdx]);
-    }
-
-    delete[] gpuCostVol;  // 释放 GPU 内存
+	
+//#pragma omp parallel for
+	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
+	{
+		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
+		{
+			std::cout << "cost --- y=" << y << "\tx=" << x << std::endl;
+			costVolDataCompute(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter);
+		}
+	}
+	
+	/*
+	int yOffset = rawImageParameter.m_yCenterBeginOffset;
+	int xOffset = rawImageParameter.m_xCenterBeginOffset;
+	int yLens = rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset - rawImageParameter.m_yCenterBeginOffset;
+	int xLens = rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset - rawImageParameter.m_xCenterBeginOffset;
+#pragma omp parallel for
+	for (int k = 0; k < yLens*xLens; k++)
+	{
+		int y = k / xLens + yOffset;
+		int x = k % xLens + xOffset;
+		costVolDataCompute(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter);
+	}
+	*/
 }
 
-//void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat *costVol) //���205�����ݣ�����ֻ���ǳ���������
-//{//��������Rawͼ���Ӧ��dataCost
-//	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-//	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-//	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-//
-//	dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC3, 1 / 255.0f);   //��ͨ����ɫͼ����
-//	//dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC1, 1 / 255.0f);	//��ͨ����ɫͼ�����������У�����������������ж�Ҫ�ģ�
-//	cv::Mat im_gray, tmp;
-//	m_inputImg.convertTo(tmp, CV_32F);
-//	cv::cvtColor(tmp, im_gray, COLOR_RGB2GRAY); //���Ƴ��������Ϊ��������Ҫ�����Ҷ�ͼ��Ȼ��������,��Ϊ������ɫ�ݶȷ�����Ҫ�õ���
-//
-//	cv::Mat dst_x, dst_y;
-//	/*
-//	Sobel(im_gray, dst_x, CV_32F, 1, 0);
-//	Sobel(im_gray, dst_y, CV_32F, 0, 1);
-//	addWeighted(dst_x, 0.5, dst_y, 0.5, 0, m_gradImg);
-//	*/
-//	
-//	
-//	
-//	
-//	cv::Sobel(im_gray, m_gradImg, CV_32F, 1, 0, 1);
-//	m_gradImg += 0.5;
-//
-//	
-////#pragma omp parallel for
-//	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-//	{
-//		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-//		{
-//			std::cout << "cost --- y=" << y << "\tx=" << x << std::endl;
-//			costVolDataCompute(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter);
-//		}
-//	}
-//	
-//	/*
-//	int yOffset = rawImageParameter.m_yCenterBeginOffset;
-//	int xOffset = rawImageParameter.m_xCenterBeginOffset;
-//	int yLens = rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset - rawImageParameter.m_yCenterBeginOffset;
-//	int xLens = rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset - rawImageParameter.m_xCenterBeginOffset;
-//#pragma omp parallel for
-//	for (int k = 0; k < yLens*xLens; k++)
-//	{
-//		int y = k / xLens + yOffset;
-//		int x = k % xLens + xOffset;
-//		costVolDataCompute(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter);
-//	}
-//	*/
-//}
 
 
+void CostVolCompute::costVolDataCompute(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
+	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter)
+{//��������Rawͼ���Ӧ��dataCost--����ÿ����ͼ����ÿ�����ص�cost
+	Point2d &centerPos = microImageParameter.m_ppLensCenterPoints[y][x];
+	int curCenterIndex = y*rawImageParameter.m_xLensNum + x;
 
-//void CostVolCompute::costVolDataCompute(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
-//	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter)
-//{//��������Rawͼ���Ӧ��dataCost--����ÿ����ͼ����ÿ�����ص�cost
-//	Point2d &centerPos = microImageParameter.m_ppLensCenterPoints[y][x];
-//	int curCenterIndex = y*rawImageParameter.m_xLensNum + x;
-//
-//	//��������ĵ��Բ��Χ�ڱ�����
-//	for (int py = centerPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
-//		py <= centerPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; py++)
-//	{
-//		for (int px = centerPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
-//			px <= centerPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; px++)
-//		{
-//			if (microImageParameter.m_ppPixelsMappingSet[py][px] == curCenterIndex){//ȷ������Բ�ķ�Χ��
-//				for (int d = 0; d < disparityParameter.m_disNum; d++)
-//				{
-//					float *cost = (float*)costVol[d].ptr<float>(py - rawImageParameter.m_yPixelBeginOffset);
-//					cost[px - rawImageParameter.m_xPixelBeginOffset] = costVolDataCompute(y, x, py, px, d, rawImageParameter, microImageParameter, disparityParameter);
-//				}
-//			}
-//		}
-//	}
-//}
+	//��������ĵ��Բ��Χ�ڱ�����
+	for (int py = centerPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
+		py <= centerPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; py++)
+	{
+		for (int px = centerPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
+			px <= centerPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; px++)
+		{
+			if (microImageParameter.m_ppPixelsMappingSet[py][px] == curCenterIndex){//ȷ������Բ�ķ�Χ��
+				for (int d = 0; d < disparityParameter.m_disNum; d++)
+				{
+					float *cost = (float*)costVol[d].ptr<float>(py - rawImageParameter.m_yPixelBeginOffset);
+					cost[px - rawImageParameter.m_xPixelBeginOffset] = costVolDataCompute(y, x, py, px, d, rawImageParameter, microImageParameter, disparityParameter);
+				}
+			}
+		}
+	}
+}
 
 float CostVolCompute::costVolDataCompute(int y, int x, int py, int px, int d, const RawImageParameter &rawImageParameter,
 	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter)

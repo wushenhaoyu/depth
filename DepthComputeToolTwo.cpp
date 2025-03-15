@@ -37,15 +37,15 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	DisparityParameter disparityParameter = m_dataParameter.getDisparityParameter();
 	clock_t t1, t2;
 
-	/*cv::Mat *costVol = new cv::Mat[disparityParameter.m_disNum];
+	cv::Mat *costVol = new cv::Mat[disparityParameter.m_disNum];
 	for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
 		costVol[mIdx] = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
-	}*/
-	cv::cuda::GpuMat* costVol = new cv::cuda::GpuMat[disparityParameter.m_disNum];
+	}
+	/*cv::cuda::GpuMat* costVol = new cv::cuda::GpuMat[disparityParameter.m_disNum];
     for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
         costVol[mIdx] = cv::cuda::GpuMat(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
         costVol[mIdx].setTo(cv::Scalar(0));  // 在 GPU 上初始化为零
-    }
+    }*/
 	fstream outfile(m_dataParameter.m_folderPath + "/timeLog.txt", ios::out);
 
 //	/*
