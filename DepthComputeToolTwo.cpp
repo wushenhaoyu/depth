@@ -23,12 +23,13 @@ void DepthComputeToolTwo::parameterInit(std::string dataFolderName, std::string 
 	int yCenterBeginOffset, int xCenterBeginOffset, int yCenterEndOffset, int xCenterEndOffset, int filterRadius, float circleDiameter, 
 	float circleNarrow, int dispMin, int dispMax, float dispStep)
 {
-	clock_t t1 = clock();
+	auto start = std::chrono::high_resolution_clock::now();
 	m_dataParameter.init(dataFolderName, centerPointFileName, inputRawImgName,
 		yCenterBeginOffset, xCenterBeginOffset, yCenterEndOffset, xCenterEndOffset,
 		filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
-	clock_t t2 = clock();
-	std::cout << "init parameter use  time: " << (t2 - t1)  << " ms " << std::endl;
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "init parameter use  time: " << duration << " ms " << std::endl;
 }
 
 void DepthComputeToolTwo::rawImageDisparityCompute()
@@ -45,12 +46,15 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 
 //	/*
 	CostVolCompute costVolCompute;
-	t1 = clock();
+	auto start = std::chrono::high_resolution_clock::now();
 	costVolCompute.costVolDataCompute(m_dataParameter, costVol);
-	t2 = clock();
-	std::cout << "init raw cost vol compute use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "init raw cost vol compute use time: " << duration  << " ms " << std::endl;
 //	*/
 
+
+	start = std::chrono::high_resolution_clock::now();
 	DataDeal dataDeal;
 	std::string  storeName;
 	cv::Mat rawDisp = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
@@ -59,21 +63,23 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	storeName = m_dataParameter.m_folderPath + "/dispBeforeFilter.png";
 	dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp before filter final!" << std::endl;
-
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "DataDeal use time: " << duration  << " ms " << std::endl;
 
 	
 
 	CostVolFilter costVolFilter;
-	t1 = clock();
+	start = std::chrono::high_resolution_clock::now();
 	costVolFilter.costVolWindowFilter(m_dataParameter, costVol);
-	t2 = clock();
 	//std::cout << "init raw cost vol filter use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
-	std::cout << "init raw cost vol filter use time: " << (t2 - t1)  << " ms " << std::endl;
 	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
 	storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
 	dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp_afterFilter final!" << std::endl;
-	
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "init raw cost vol filter use time: " << duration << " ms " << std::endl;
 
 
 
@@ -102,11 +108,12 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 
 //	/*����
 	ConfidenceCompute confidenceCompute;
-	t1 = clock();
+	start = std::chrono::high_resolution_clock::now();
 	confidenceCompute.confidenceMeasureCompute(m_dataParameter, costVol);
-	t2 = clock();
-	std::cout << "confident measure compute use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
-	outfile << "confident measure compute use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds \n";
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "confident measure compute use time: " << duration / CLOCKS_PER_SEC << " seconds " << std::endl;
+	outfile << "confident measure compute use time: " << duration / CLOCKS_PER_SEC << " seconds \n";
 	cv::Mat *pConfidentMask = confidenceCompute.getConfidentMask();
 	
 
@@ -115,12 +122,13 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 //	*/
 
 	ImageRander imageRander;
-	t1 = clock();
+	start = std::chrono::high_resolution_clock::now();
 	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
 //	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
-	t2 = clock();
-	std::cout << "sub aperature rander use time: " << (t2 - t1)  << " ms " << std::endl;
-	outfile << "sub aperature rander use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds \n";
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "sub aperature rander use time: " << duration << " ms " << std::endl;
+	outfile << "sub aperature rander use time: " << duration / CLOCKS_PER_SEC << " seconds \n";
 	
 	outfile.close();
 	delete[]costVol;

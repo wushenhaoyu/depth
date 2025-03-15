@@ -45,7 +45,7 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
 	{
 		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
 		{
-			std::cout << "cost --- y=" << y << "\tx=" << x << std::endl;
+			//std::cout << "cost --- y=" << y << "\tx=" << x << std::endl;
 			costVolDataCompute(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter);
 		}
 	}
