@@ -7,7 +7,7 @@ using namespace cv;
 using namespace std;
 
 void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol, cv::Mat *costVolFilter)
-{//��costVol���д����˲�
+{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
@@ -28,7 +28,7 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
 
 void CostVolFilter::costVolWindowFilter(cv::Mat *costVol, cv::Mat *costVolFilter, int y, int x, const RawImageParameter &rawImageParameter,
 	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter)
-{//��costVol���д����˲�
+{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
 	Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
 	int xBegin = curCenterPos.x  - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
 	int yBegin = curCenterPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
@@ -50,7 +50,7 @@ void CostVolFilter::costVolWindowFilter(cv::Mat *costVol, cv::Mat *costVolFilter
 }
 
 void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter)
-{//��Բ�α߽���д���
+{//锟斤拷圆锟轿边斤拷锟斤拷写锟斤拷锟�
 //#pragma omp parallel for
 	for (int d = 0; d < disparityParameter.m_disNum; d++)
 	{
@@ -60,7 +60,7 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 }
 
 /*void CostVolFilter::microImageDisparityFilter(const DataParameter &dataParameter, cv::Mat *&costVol, FilterOptimizeKind curFilterOptimizeKind)
-{//��С��microͼ������˲�
+{//锟斤拷小锟斤拷micro图锟斤拷锟斤拷锟斤拷瞬锟�
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
@@ -96,7 +96,7 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 }*/
 
 void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol)
-{//��costVol���д����˲�
+{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
@@ -116,7 +116,7 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
 
 void CostVolFilter::costVolWindowFilter(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
 	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter)
-{//��costVol���д����˲�
+{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
 	Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
 	int xBegin = curCenterPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
 	int yBegin = curCenterPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
@@ -130,7 +130,7 @@ void CostVolFilter::costVolWindowFilter(cv::Mat *costVol, int y, int x, const Ra
 	{
 		cv::Mat srcCost = costVol[d](cv::Rect(xBegin - rawImageParameter.m_xPixelBeginOffset, yBegin - rawImageParameter.m_yPixelBeginOffset, xEnd - xBegin + 1, yEnd - yBegin + 1));
 		//cv::Mat destCost = cv::Mat::zeros(yEnd - yBegin + 1, xEnd - xBegin + 1, CV_32F);
-		cv::filter2D(srcCost, destCost, -1, filterPatameter.m_filterKnernel, cv::Point(2, 2), 0, BORDER_CONSTANT);
+		cv::filter2D(srcCost, destCost, -1, filterPatameter.m_filterKnernel, cv::Point(-1, -1), 0, BORDER_CONSTANT);//这里改回(-1,-1)可能会出现中断，原因不明，但不改滤波效果很差
 		cv::divide(destCost, divideMask, destCost);
 		cv::multiply(destCost, multiMask, destCost);
 		destCost.copyTo(srcCost);

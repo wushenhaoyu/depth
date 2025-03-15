@@ -1,5 +1,5 @@
 // Software Version: V1.00
-// SoftWare Name:������ʾ����TS-RJ4001
+// SoftWare Name:锟斤拷锟斤拷锟斤拷示锟斤拷锟斤拷TS-RJ4001
 // Author: Zhang Hongyu
 // Date: 2024-12-03
 
@@ -24,26 +24,26 @@ ToolTwoTestDemo::~ToolTwoTestDemo()
 }
 
 void ToolTwoTestDemo::data1compute()
-{//����0321_2
-	//��һ������Rawͼ�������ز���������
+{//锟斤拷锟斤拷0321_2
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 6; //�˲��뾶
-	float circleDiameter = 80; //СԲ����
-	float circleNarrow = 1.5; //Բ�뾶����ֵ
-	int dispMin = 10; //�Ӳ���Сֵ
-	int dispMax = 25; //�Ӳ����ֵ
-	float dispStep =1  ; //�Ӳ����ֵ            
+	int filterRadius = 6; //锟剿诧拷锟诫径
+	float circleDiameter = 80; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //圆锟诫径锟斤拷锟斤拷值
+	int dispMin = 10; //锟接诧拷锟斤拷小值
+	int dispMax = 25; //锟接诧拷锟斤拷锟街�
+	float dispStep =1  ; //锟接诧拷锟斤拷锟街�            
 
-	string folderName = "/home/jetson/Desktop/light";//����м������ļ���
+	string folderName = "/home/jetson/Desktop/light";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "205.bmp";
 
 	string centerPointFile = "points.txt";
 
-	// ���� dataParameter �Ѷ��岢��������ͼ�� m_inputImg
+	// 锟斤拷锟斤拷 dataParameter 锟窖讹拷锟藉并锟斤拷锟斤拷锟斤拷锟斤拷图锟斤拷 m_inputImg
 	//cv::Mat m_inputImg = cv::imread("C:/work/LightFieldTool_CPU/LightFieldTool_CPU/205/205.bmp", cv::IMREAD_GRAYSCALE);
 	/*
 	if (m_inputImg.empty()) {
@@ -51,7 +51,7 @@ void ToolTwoTestDemo::data1compute()
 		return ;
 	}*/
 
-	// ���ͼ��ͨ������ȷ���ǻҶ�ͼ��
+	// 锟斤拷锟酵硷拷锟酵拷锟斤拷锟斤拷锟饺凤拷锟斤拷腔叶锟酵硷拷锟�
 	/*
 	if (m_inputImg.channels() == 1) {
 		std::cout << "Input image is  a grayscale image" << std::endl;
@@ -60,429 +60,429 @@ void ToolTwoTestDemo::data1compute()
 	
 
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 void ToolTwoTestDemo::data2compute()
-{//����1202
-	//��һ������Rawͼ�������ز���������
+{//锟斤拷锟斤拷1202
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶 4
-	float circleDiameter = 26.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 5; //�Ӳ���Сֵ
-	int dispMax = 8; //�Ӳ����ֵ
-	float dispStep = 0.1; //�Ӳ����ֵ  0.1
+	int filterRadius = 8; //锟剿诧拷锟诫径 4
+	float circleDiameter = 26.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 5; //锟接诧拷锟斤拷小值
+	int dispMax = 8; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.1; //锟接诧拷锟斤拷锟街�  0.1
 
-	string folderName = "C:/work/LightFieldTool_CPU/LightFieldTool_CPU/725";//����м������ļ���
+	string folderName = "C:/work/LightFieldTool_CPU/LightFieldTool_CPU/725";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "725.bmp";
 
 	string centerPointFile = "points.txt";
 
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 void ToolTwoTestDemo::data3compute()
-{//���� 0321_4
-	//��һ������Rawͼ�������ز���������
+{//锟斤拷锟斤拷 0321_4
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
 	int yCenterEndOffset = 1; 
 
-	int filterRadius = 4; //�˲��뾶
-	float circleDiameter = 35; //СԲ����
-	float circleNarrow = 1; //��������ֵ
-	int dispMin = 10; //�Ӳ���Сֵ
-	int dispMax = 13; //�Ӳ����ֵ
-	float dispStep = 0.1; //�Ӳ����ֵ
+	int filterRadius = 4; //锟剿诧拷锟诫径
+	float circleDiameter = 35; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 10; //锟接诧拷锟斤拷小值
+	int dispMax = 13; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.1; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_11";//����м������ļ���
+	string folderName = "205_11";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "5m.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 void ToolTwoTestDemo::data4compute()
-{//���� 0321_5
-	//��һ������Rawͼ�������ز���������
+{//锟斤拷锟斤拷 0321_5
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
 	int yCenterEndOffset = 1; 
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 38; //СԲ����
-	float circleNarrow = 1; //��������ֵ
-	int dispMin = 6; //�Ӳ���Сֵ
-	int dispMax = 10; //�Ӳ����ֵ
-	float dispStep = 0.2; //�Ӳ����ֵ
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 38; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 6; //锟接诧拷锟斤拷小值
+	int dispMax = 10; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.2; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_11_cut";//����м������ļ���
+	string folderName = "205_11_cut";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "1m_cut.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
-void ToolTwoTestDemo::data5compute()
-{//���� 0321_6
-	//��һ������Rawͼ�������ز���������
+void ToolTwoTestDemo::data5compute()//主要函数
+{//锟斤拷锟斤拷 0321_6
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 2;
-	int yCenterStartOffset = 2; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 2; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 2;
-	int yCenterEndOffset = 2; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 2; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
 
-	/**�������� **/
-	
-	int filterRadius = 6; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 5; //�Ӳ���Сֵ
-	int dispMax = 14; //�Ӳ����ֵ
-	float dispStep = 0.25; //�Ӳ����ֵ
-	
-
-	/*ֻ����һ���ؾ۽�ͼ�Ĳ���*/
+	/**正常参数 **/
 	/*
-	int filterRadius = 2; //�˲��뾶
-	float circleDiameter = 2.0; //СԲ����
-	float circleNarrow = 1.0; //��������ֵ
-	int dispMin = 12; //�Ӳ���Сֵ
-	int dispMax = 13; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int filterRadius = 6; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 5; //锟接诧拷锟斤拷小值
+	int dispMax = 14; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.25; //锟接诧拷锟斤拷锟街�
+	
 	*/
+	/*简化版参数*/
+	
+	int filterRadius = 6; //滤波半径
+	float circleDiameter = 2.0; //小圆宽度
+	float circleNarrow = 1.0; //窗口缩减值
+	int dispMin = 12; //视差最小值
+	int dispMax = 13; //视差最大值
+	float dispStep = 0.5; //视差迭代值
+	
 	
 
-	string folderName = "/home/jetson/Desktop/light/205_66";//����м������ļ���
+	string folderName = "/home/jetson/Desktop/light/205_66";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "66_5.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 
 void ToolTwoTestDemo::data6compute()
 {
-	//��һ������Rawͼ�������ز���������
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 6; //�Ӳ���Сֵ
-	int dispMax = 10; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 6; //锟接诧拷锟斤拷小值
+	int dispMax = 10; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_11_77";//����м������ļ���
+	string folderName = "205_11_77";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "205.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 void ToolTwoTestDemo::data7compute()
-{//���� 0321_6
-	//��һ������Rawͼ�������ز���������
+{//锟斤拷锟斤拷 0321_6
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ 
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值 
 	/*
-	int dispMin = 7; //�Ӳ���Сֵ
-	int dispMax = 14; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int dispMin = 7; //锟接诧拷锟斤拷小值
+	int dispMax = 14; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 	*/
-	int dispMin = 7; //�Ӳ���Сֵ
-	int dispMax = 8; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int dispMin = 7; //锟接诧拷锟斤拷小值
+	int dispMax = 8; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 
 
-	string folderName = "205_5m";//����м������ļ���
+	string folderName = "205_5m";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "205_5m.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 
 void ToolTwoTestDemo::data8compute()
 {//
-	//��һ������Rawͼ�������ز���������
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 8; //�Ӳ���Сֵ
-	int dispMax = 14; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 8; //锟接诧拷锟斤拷小值
+	int dispMax = 14; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_15m";//����м������ļ���
+	string folderName = "205_15m";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "15.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 
 void ToolTwoTestDemo::data9compute()
 {//
-	//��һ������Rawͼ�������ز���������
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 7; //�Ӳ���Сֵ
-	int dispMax = 15; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 7; //锟接诧拷锟斤拷小值
+	int dispMax = 15; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_25m";//����м������ļ���
+	string folderName = "205_25m";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "25.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
 
 void ToolTwoTestDemo::data10compute()
 {//
-	//��һ������Rawͼ�������ز���������
+	//锟斤拷一锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟斤拷锟斤拷锟截诧拷锟斤拷锟斤拷锟斤拷锟斤拷
 	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int yCenterStartOffset = 1; //x锟斤拷y锟斤拷锟斤拷锟较碉拷图锟斤拷偏锟斤拷值
 	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	int yCenterEndOffset = 1; //锟斤拷取锟斤拷图锟斤拷锟斤拷群透叨锟�
 
-	int filterRadius = 8; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 7; //�Ӳ���Сֵ
-	int dispMax = 15; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
+	int filterRadius = 8; //锟剿诧拷锟诫径
+	float circleDiameter = 40.0; //小圆锟斤拷锟斤拷
+	float circleNarrow = 1.5; //锟斤拷锟斤拷锟斤拷锟斤拷值
+	int dispMin = 7; //锟接诧拷锟斤拷小值
+	int dispMax = 15; //锟接诧拷锟斤拷锟街�
+	float dispStep = 0.5; //锟接诧拷锟斤拷锟街�
 
-	string folderName = "205_50m";//����м������ļ���
+	string folderName = "205_50m";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
 	string inputRawImg = "50.bmp";
 	string centerPointFile = "points.txt";
 
-	//�ڶ������������ݳ�ʼ��
+	//锟节讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟捷筹拷始锟斤拷
 	DepthComputeToolTwo depthComputeToolTwo;
 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
 
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
-	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
-	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+	//锟斤拷锟藉步锟斤拷锟斤拷锟叫筹拷锟斤拷锟斤拷鹊募锟斤拷锟�,注锟斤拷锟叫伙拷前锟斤拷暮甓拷澹★拷锟阶拷锟絊CENE_DEPTH_COMPUTE锟斤拷锟斤拷
 
-	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
-	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
-	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
-	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+	string referSubImgName = "subAperatureImg.bmp";//锟接孔撅拷图锟斤拷
+	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //锟接诧拷锟侥硷拷
+	std::string referMaskXmlName = "confidentMatMask.xml"; //锟斤拷锟脚讹拷锟侥硷拷
+	string renderPointsMapping = "renderPointsMapping.txt";//锟斤拷染锟斤拷映锟斤拷锟�
 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
 #endif
 
-	//������ ����ȫ���Ż�Matlab����
+	//锟斤拷锟斤拷锟斤拷 锟斤拷锟斤拷全锟斤拷锟脚伙拷Matlab锟斤拷锟斤拷
 }
