@@ -1,4 +1,4 @@
-# Install script for directory: /home/jetson/Desktop/depth
+# Install script for directory: /home/jetson/Desktop/light
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/jetson/Desktop/depth/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/jetson/Desktop/light/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

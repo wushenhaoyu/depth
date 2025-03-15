@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/jetson/Desktop/depth/build"
+			"value" : "/home/jetson/Desktop/light/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -627,7 +627,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/jetson/Desktop/depth"
+			"value" : "/home/jetson/Desktop/light"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -2003,7 +2003,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/jetson/Desktop/depth/build"
+			"value" : "/home/jetson/Desktop/light/build"
 		},
 		{
 			"name" : "MyProject_SOURCE_DIR",
@@ -2015,7 +2015,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/jetson/Desktop/depth"
+			"value" : "/home/jetson/Desktop/light"
 		},
 		{
 			"name" : "OpenCV_DIR",

@@ -10,7 +10,7 @@ The output was:
 
 Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
 
-The C compiler identification is GNU, found in "/home/jetson/Desktop/depth/build/CMakeFiles/3.16.3/CompilerIdC/a.out"
+The C compiler identification is GNU, found in "/home/jetson/Desktop/light/build/CMakeFiles/3.16.3/CompilerIdC/a.out"
 
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
 Compiler: /usr/bin/aarch64-linux-gnu-g++ 
@@ -23,10 +23,10 @@ The output was:
 
 Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
 
-The CXX compiler identification is GNU, found in "/home/jetson/Desktop/depth/build/CMakeFiles/3.16.3/CompilerIdCXX/a.out"
+The CXX compiler identification is GNU, found in "/home/jetson/Desktop/light/build/CMakeFiles/3.16.3/CompilerIdCXX/a.out"
 
 Determining if the C compiler works passed with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_6aa63 && [1/2] Building C object CMakeFiles/cmTC_6aa63.dir/testCCompiler.c.o
 [2/2] Linking C executable cmTC_6aa63
@@ -34,7 +34,7 @@ Run Build Command(s):/usr/bin/ninja cmTC_6aa63 && [1/2] Building C object CMakeF
 
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_1b098 && [1/2] Building C object CMakeFiles/cmTC_1b098.dir/CMakeCCompilerABI.c.o
 Using built-in specs.
@@ -103,7 +103,7 @@ Parsed C implicit include dir info from above output: rv=done
 
 Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp]
   ignore line: []
   ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_1b098 && [1/2] Building C object CMakeFiles/cmTC_1b098.dir/CMakeCCompilerABI.c.o]
   ignore line: [Using built-in specs.]
@@ -215,7 +215,7 @@ Parsed C implicit link information from above output:
 
 
 Determining if the CXX compiler works passed with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_afdb4 && [1/2] Building CXX object CMakeFiles/cmTC_afdb4.dir/testCXXCompiler.cxx.o
 [2/2] Linking CXX executable cmTC_afdb4
@@ -223,7 +223,7 @@ Run Build Command(s):/usr/bin/ninja cmTC_afdb4 && [1/2] Building CXX object CMak
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_94447 && [1/2] Building CXX object CMakeFiles/cmTC_94447.dir/CMakeCXXCompilerABI.cpp.o
 Using built-in specs.
@@ -302,7 +302,7 @@ Parsed CXX implicit include dir info from above output: rv=done
 
 Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp]
   ignore line: []
   ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_94447 && [1/2] Building CXX object CMakeFiles/cmTC_94447.dir/CMakeCXXCompilerABI.cpp.o]
   ignore line: [Using built-in specs.]
@@ -414,7 +414,7 @@ Parsed CXX implicit link information from above output:
 
 
 Determining if the include file pthread.h exists passed with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_9623c && [1/2] Building C object CMakeFiles/cmTC_9623c.dir/CheckIncludeFile.c.o
 [2/2] Linking C executable cmTC_9623c
@@ -422,7 +422,7 @@ Run Build Command(s):/usr/bin/ninja cmTC_9623c && [1/2] Building C object CMakeF
 
 
 Determining if the function pthread_create exists in the pthread passed with the following output:
-Change Dir: /home/jetson/Desktop/depth/build/CMakeFiles/CMakeTmp
+Change Dir: /home/jetson/Desktop/light/build/CMakeFiles/CMakeTmp
 
 Run Build Command(s):/usr/bin/ninja cmTC_f3010 && [1/2] Building C object CMakeFiles/cmTC_f3010.dir/CheckFunctionExists.c.o
 [2/2] Linking C executable cmTC_f3010

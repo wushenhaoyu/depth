@@ -41,33 +41,23 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
 		costVol[mIdx] = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
 	}
-	/*cv::cuda::GpuMat* costVol = new cv::cuda::GpuMat[disparityParameter.m_disNum];
-    for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
-        costVol[mIdx] = cv::cuda::GpuMat(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
-        costVol[mIdx].setTo(cv::Scalar(0));  // 鍦� GPU 涓婂垵濮嬪寲涓洪浂
-    }*/
 	fstream outfile(m_dataParameter.m_folderPath + "/timeLog.txt", ios::out);
 
-	/*
+//	/*
 	CostVolCompute costVolCompute;
 	t1 = clock();
 	costVolCompute.costVolDataCompute(m_dataParameter, costVol);
 	t2 = clock();
 	std::cout << "init raw cost vol compute use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
-	*/
+//	*/
 
 	DataDeal dataDeal;
 	std::string  storeName;
 	cv::Mat rawDisp = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
-	/*设为固定值，取消计算*/
-	for (int i = 0; i < rawDisp.rows; i++) {
-		for (int j = 0; j < rawDisp.cols; j++) {
-			rawDisp.at<uchar>(i, j) = 15;
-		}
-	}
-	//dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);//锟斤拷锟斤拷
+	//rawDisp.setTo(5);//��ʱ�趨Ϊ�̶�ֵ��ȡ������ļ������
+	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);//����
 	storeName = m_dataParameter.m_folderPath + "/dispBeforeFilter.png";
-	//dataDeal.dispMapShow(storeName, rawDisp);//锟斤拷锟斤拷
+	dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp before filter final!" << std::endl;
 
 
@@ -81,13 +71,13 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	std::cout << "init raw cost vol filter use time: " << (t2 - t1)  << " ms " << std::endl;
 	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
 	storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
-	dataDeal.dispMapShow(storeName, rawDisp);//锟斤拷锟斤拷
+	dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp_afterFilter final!" << std::endl;
 	
 
 
 
-/*锟斤拷锟皆憋拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷貌锟斤拷锟�
+/*���Ա�������������ò���
 	
 	t1 = clock();
 	costVolFilter.microImageDisparityFilter(m_dataParameter, costVol, FilterOptimizeKind::e_stca);
@@ -110,7 +100,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	
 */
 
-	/*锟斤拷锟斤拷
+//	/*����
 	ConfidenceCompute confidenceCompute;
 	t1 = clock();
 	confidenceCompute.confidenceMeasureCompute(m_dataParameter, costVol);
@@ -122,12 +112,12 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 
 	SceneDepthCompute sceneDepthCompute;
 	sceneDepthCompute.outputMicrolensDisp(m_dataParameter, rawDisp, pConfidentMask);
-	*/
+//	*/
 
 	ImageRander imageRander;
 	t1 = clock();
-//	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
-	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
+	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
+//	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
 	t2 = clock();
 	std::cout << "sub aperature rander use time: " << (t2 - t1)  << " ms " << std::endl;
 	outfile << "sub aperature rander use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds \n";

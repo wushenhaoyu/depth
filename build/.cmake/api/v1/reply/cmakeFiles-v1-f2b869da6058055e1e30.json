@@ -211,8 +211,8 @@
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "/home/jetson/Desktop/depth/build",
-		"source" : "/home/jetson/Desktop/depth"
+		"build" : "/home/jetson/Desktop/light/build",
+		"source" : "/home/jetson/Desktop/light"
 	},
 	"version" : 
 	{

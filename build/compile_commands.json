@@ -1,91 +1,91 @@
 [
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/main.cpp.o -c /home/jetson/Desktop/depth/main.cpp",
-  "file": "/home/jetson/Desktop/depth/main.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/main.cpp.o -c /home/jetson/Desktop/light/main.cpp",
+  "file": "/home/jetson/Desktop/light/main.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ConfidenceCompute.cpp.o -c /home/jetson/Desktop/depth/ConfidenceCompute.cpp",
-  "file": "/home/jetson/Desktop/depth/ConfidenceCompute.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ConfidenceCompute.cpp.o -c /home/jetson/Desktop/light/ConfidenceCompute.cpp",
+  "file": "/home/jetson/Desktop/light/ConfidenceCompute.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/CostVolCompute.cpp.o -c /home/jetson/Desktop/depth/CostVolCompute.cpp",
-  "file": "/home/jetson/Desktop/depth/CostVolCompute.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/CostVolCompute.cpp.o -c /home/jetson/Desktop/light/CostVolCompute.cpp",
+  "file": "/home/jetson/Desktop/light/CostVolCompute.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/CostVolFilter.cpp.o -c /home/jetson/Desktop/depth/CostVolFilter.cpp",
-  "file": "/home/jetson/Desktop/depth/CostVolFilter.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/CostVolFilter.cpp.o -c /home/jetson/Desktop/light/CostVolFilter.cpp",
+  "file": "/home/jetson/Desktop/light/CostVolFilter.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DataDeal.cpp.o -c /home/jetson/Desktop/depth/DataDeal.cpp",
-  "file": "/home/jetson/Desktop/depth/DataDeal.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DataDeal.cpp.o -c /home/jetson/Desktop/light/DataDeal.cpp",
+  "file": "/home/jetson/Desktop/light/DataDeal.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DataParameter.cpp.o -c /home/jetson/Desktop/depth/DataParameter.cpp",
-  "file": "/home/jetson/Desktop/depth/DataParameter.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DataParameter.cpp.o -c /home/jetson/Desktop/light/DataParameter.cpp",
+  "file": "/home/jetson/Desktop/light/DataParameter.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DepthComputeToolOne.cpp.o -c /home/jetson/Desktop/depth/DepthComputeToolOne.cpp",
-  "file": "/home/jetson/Desktop/depth/DepthComputeToolOne.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DepthComputeToolOne.cpp.o -c /home/jetson/Desktop/light/DepthComputeToolOne.cpp",
+  "file": "/home/jetson/Desktop/light/DepthComputeToolOne.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DepthComputeToolTwo.cpp.o -c /home/jetson/Desktop/depth/DepthComputeToolTwo.cpp",
-  "file": "/home/jetson/Desktop/depth/DepthComputeToolTwo.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DepthComputeToolTwo.cpp.o -c /home/jetson/Desktop/light/DepthComputeToolTwo.cpp",
+  "file": "/home/jetson/Desktop/light/DepthComputeToolTwo.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DisparityRefinement.cpp.o -c /home/jetson/Desktop/depth/DisparityRefinement.cpp",
-  "file": "/home/jetson/Desktop/depth/DisparityRefinement.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/DisparityRefinement.cpp.o -c /home/jetson/Desktop/light/DisparityRefinement.cpp",
+  "file": "/home/jetson/Desktop/light/DisparityRefinement.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/GlobalOptimization.cpp.o -c /home/jetson/Desktop/depth/GlobalOptimization.cpp",
-  "file": "/home/jetson/Desktop/depth/GlobalOptimization.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/GlobalOptimization.cpp.o -c /home/jetson/Desktop/light/GlobalOptimization.cpp",
+  "file": "/home/jetson/Desktop/light/GlobalOptimization.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ImageRander.cpp.o -c /home/jetson/Desktop/depth/ImageRander.cpp",
-  "file": "/home/jetson/Desktop/depth/ImageRander.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ImageRander.cpp.o -c /home/jetson/Desktop/light/ImageRander.cpp",
+  "file": "/home/jetson/Desktop/light/ImageRander.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/SceneDepthCompute.cpp.o -c /home/jetson/Desktop/depth/SceneDepthCompute.cpp",
-  "file": "/home/jetson/Desktop/depth/SceneDepthCompute.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/SceneDepthCompute.cpp.o -c /home/jetson/Desktop/light/SceneDepthCompute.cpp",
+  "file": "/home/jetson/Desktop/light/SceneDepthCompute.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ToolOneTestDemo.cpp.o -c /home/jetson/Desktop/depth/ToolOneTestDemo.cpp",
-  "file": "/home/jetson/Desktop/depth/ToolOneTestDemo.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ToolOneTestDemo.cpp.o -c /home/jetson/Desktop/light/ToolOneTestDemo.cpp",
+  "file": "/home/jetson/Desktop/light/ToolOneTestDemo.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ToolTwoTestDemo.cpp.o -c /home/jetson/Desktop/depth/ToolTwoTestDemo.cpp",
-  "file": "/home/jetson/Desktop/depth/ToolTwoTestDemo.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/ToolTwoTestDemo.cpp.o -c /home/jetson/Desktop/light/ToolTwoTestDemo.cpp",
+  "file": "/home/jetson/Desktop/light/ToolTwoTestDemo.cpp"
 },
 
 {
-  "directory": "/home/jetson/Desktop/depth/build",
-  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/VirtualDepthCompute.cpp.o -c /home/jetson/Desktop/depth/VirtualDepthCompute.cpp",
-  "file": "/home/jetson/Desktop/depth/VirtualDepthCompute.cpp"
+  "directory": "/home/jetson/Desktop/light/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++   -isystem /usr/local/include/opencv4  -g   -std=gnu++17 -o CMakeFiles/MyProject.dir/VirtualDepthCompute.cpp.o -c /home/jetson/Desktop/light/VirtualDepthCompute.cpp",
+  "file": "/home/jetson/Desktop/light/VirtualDepthCompute.cpp"
 }
 ]

@@ -147,7 +147,7 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv:
 	imwrite(storeName, finalRanderMap);
 
 
-	/*
+//	/*
 	cv::Mat sceneDisp = cv::Mat::zeros(rawDisp.rows, rawDisp.cols, CV_64FC1);
 	rawDisp.convertTo(sceneDisp, CV_64FC1, disparityParameter.m_dispStep, disparityParameter.m_dispMin);
 	cv::Mat randerDispMap, randerSparseDispMap;
@@ -156,7 +156,7 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv:
 	storeName = dataParameter.m_folderPath + "/randerDispMap.bmp";
 	dispMapShowForColor(storeName, randerDispMap);
 
-	*/
+//	*/
 }
 
 void ImageRander::imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg)
