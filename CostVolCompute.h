@@ -1,16 +1,8 @@
-/*!
- * \class 
- *
- * \brief ÊÓ²îµÄDataCost¼ÆËãÄ£¿é£¬¿ÉÒÔÀ©Õ¹²»Í¬µÄCost¼ÆËãº¯Êı½øĞĞ¸Ä½ø
- *
- * \author liuqian
- * \date Ò»ÔÂ 2018
- */
-
 #ifndef __COSTVOLCOMPUTE_H_
 #define __COSTVOLCOMPUTE_H_
 
 #include "CommFunc.h"
+#include <opencv2/opencv.hpp>
 
 class DataParameter;
 struct RawImageParameter;
@@ -20,33 +12,32 @@ struct DisparityParameter;
 class CostVolCompute
 {
 public:
-	CostVolCompute();
-	~CostVolCompute();
+    CostVolCompute();
+    ~CostVolCompute();
 
-	void costVolDataCompute(const DataParameter &dataParameter, cv::Mat *costVol); //ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost
+    void costVolDataCompute(const DataParameter &dataParameter, cv::Mat *costVol); // è®¡ç®— Raw å›¾åƒå¯¹åº”çš„ dataCost
+
+    void costVolDataCompute(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
+        const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter,
+        const cv::Mat &inputImg, const cv::Mat &gradImg); // æ›´æ–°å£°æ˜
+
+
+    float costVolDataCompute(int y, int x, int py, int px, int d, const RawImageParameter &rawImageParameter,
+        const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter,
+        const cv::Mat &inputImg, const cv::Mat &gradImg); // æ›´æ–°å£°æ˜
+
+    bool isCurPointValid(cv::Point2d &matchPoint, int matchCenterIndex, const RawImageParameter &rawImageParameter,
+        const MicroImageParameter &microImageParameter); // åˆ¤æ–­å½“å‰ä½ç½®çš„åŒ¹é…ç‚¹æ˜¯å¦æœ‰æ•ˆ
+
+    float bilinearInsertValue(const cv::Point2d &curPoint, const cv::Point2d &matchPoint, const cv::Mat &inputImg, const cv::Mat &gradImg); // è®¡ç®—å½“å‰ç‚¹ä¸åŒ¹é…ç‚¹çš„ cost å€¼
+
+    inline float myCostGrd(float* lC, float* rC, float* lG, float* rG); // é¢œè‰²å’Œæ¢¯åº¦è¿›è¡ŒåŠ æƒ
+
+    inline float myCostGrd(float* lC, float* lG); // é¢œè‰²å’Œæ¢¯åº¦åŠ æƒï¼ˆè¾¹ç•Œå¤„ç†ï¼‰
+
 private:
-	void costVolDataCompute(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
-		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter);
-	//ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost--¼ÆËãÃ¿¸ö×ÓÍ¼ÏñÖĞÃ¿¸öÏñËØµÄcost
-
-	float costVolDataCompute(int y, int x, int py, int px, int d, const RawImageParameter &rawImageParameter,
-		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter); 
-	//ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost--¼ÆËãÃ¿¸öÏñËØÓëÖÜÎ§µÄÏñËØµÄÆ¥ÅäÖµ
-
-	bool isCurPointValid(Point2d &matchPoint, int matchCenterIndex, const RawImageParameter &rawImageParameter,
-		const MicroImageParameter &microImageParameter); //ÅĞ¶Ï´ËÎ»ÖÃµÄÆ¥ÅäµãÊÇ·ñºÏÀí
-
-	float bilinearInsertValue(const Point2d &curPoint, const Point2d &matchPoint); //¼ÆËãÖĞĞÄµãÓëÆ¥Åäµã¼äµÄcostÖµ
-
-	inline float myCostGrd(float* lC, float* rC, float* lG, float* rG); //ÑÕÉ«ÓëÌİ¶È½øĞĞ¼ÓÈ¨
-
-	inline float myCostGrd(float* lC, float* lG); //ÑÕÉ«ÓëÌİ¶È¼ÓÈ¨£¬±ß½ç´¦Àí
-
-private:
-	cv::Mat m_inputImg; //ÊäÈëÔ­Ê¼Í¼Ïñ
-	cv::Mat m_gradImg; //Ô­Ê¼Í¼Ïñ¶ÔÓ¦µÄÌİ¶ÈÍ¼Ïñ
-
+    cv::Mat m_inputImg; // å­˜å‚¨åŸå§‹å›¾åƒ
+    cv::Mat m_gradImg;  // åŸå§‹å›¾åƒå¯¹åº”çš„æ¢¯åº¦å›¾åƒ
 };
-
 
 #endif
