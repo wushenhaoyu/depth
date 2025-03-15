@@ -38,8 +38,13 @@
                 "-lopencv_imgcodecs",
                 "-lopencv_highgui",
                 "-lopencv_imgproc",
-                "-lopencv_cudaimgproc",  // 添加 OpenCV CUDA 图像处理模块
-                "-lopencv_cudafilters",  // 添加 OpenCV CUDA 滤波器模块
+                "-lopencv_cudaarithm",  // 添加 OpenCV CUDA 算术模块
+                "-lopencv_cudaimgproc", // 添加 OpenCV CUDA 图像处理模块
+                "-lopencv_cudafilters", // 添加 OpenCV CUDA 滤波器模块
+                "-lopencv_cudawarping", // 添加 OpenCV CUDA 图像变换模块
+                "-lopencv_cudafeatures2d", // 添加 OpenCV CUDA 特征检测模块
+                "-lopencv_cudastereo",    // 添加 OpenCV CUDA 立体视觉模块
+                "-lopencv_cudev",         // 添加 OpenCV CUDA 设备模块
                 "-L${workspaceFolder}/gcov3",  // GCO 库路径
                 "-lGCoptimization",             // 链接 GCO
                 "-I${workspaceFolder}/CAST"

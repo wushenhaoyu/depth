@@ -1,10 +1,10 @@
 /*!
  * \class ImageRander
  *
- * \brief ¸ù¾ÝRawÊÓ²î¶Ô×Ó¿×¾¶Í¼ÏñµÄäÖÈ¾
+ * \brief ï¿½ï¿½ï¿½ï¿½Rawï¿½Ó²ï¿½ï¿½ï¿½Ó¿×¾ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½È¾
  *
  * \author liuqian
- * \date Ò»ÔÂ 2018
+ * \date Ò»ï¿½ï¿½ 2018
  */
 
 
@@ -20,7 +20,7 @@ struct MicroImageParameter;
 
 struct RanderMapPatch
 {
-	int sy, sx; //Ð¡µÄäÖÈ¾Í¼ÔÚÈ«¾ÖäÖÈ¾Í¼ÖÐµÄÆðÊ¼Î»ÖÃ
+	int sy, sx; //Ð¡ï¿½ï¿½ï¿½ï¿½È¾Í¼ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½È¾Í¼ï¿½Ðµï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
 	cv::Mat simg;
 };
 
@@ -30,11 +30,11 @@ public:
 	ImageRander();
 	~ImageRander();
 
-	void imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask);//¶Ô´øÖÃÐÅ¶ÈmaskµÄÇé¿ö½øÐÐ×Ó¿×¾¶äÖÈ¾
-	void imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp);//¶ÔÃ»ÓÐÖÃÐÅ¶ÈmaskµÄÇé¿ö½øÐÐ×Ó¿×¾¶äÖÈ¾
+	void imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask);//ï¿½Ô´ï¿½ï¿½ï¿½ï¿½Å¶ï¿½maskï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿×¾ï¿½ï¿½ï¿½È¾
+	void imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp);//ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Å¶ï¿½maskï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿×¾ï¿½ï¿½ï¿½È¾
 private:
 	void imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg);
-	void imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin);//È¥³ý±ß½çºÚÉ«¿Õ¶´
+	void imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin);//È¥ï¿½ï¿½ï¿½ß½ï¿½ï¿½É«ï¿½Õ¶ï¿½
 	void outputSparseSceneDepth(string folderName, cv::Mat &sceneSparseDepth, cv::Mat &sceneDepthMask);
 };
 

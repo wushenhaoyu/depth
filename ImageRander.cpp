@@ -1,9 +1,12 @@
 #include "ImageRander.h"
 #include "DataParameter.h"
 #include <iomanip>
+#include <opencv2/cudaimgproc.hpp> // CUDA 图像处理模块
+#include <opencv2/cudaarithm.hpp>   // CUDA 算术操作模块
 
 using namespace std;
 using namespace cv;
+
 
 
 //修改了WIDTH和HEIGHT,此处参数只能影响到渲染图的生成效果
@@ -112,154 +115,208 @@ void ImageRander::imageRanderWithMask(const DataParameter &dataParameter, cv::Ma
 	delete[]ppLensMeanDisp;
 }
 
-void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp)
-{//对没有置信度mask的情况进行子孔径渲染
-	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-
-	cv::Mat tmpRawDisp = cv::Mat::zeros(rawDisp.rows, rawDisp.cols, CV_32FC1);
-	rawDisp.convertTo(tmpRawDisp, CV_32F, disparityParameter.m_dispStep, disparityParameter.m_dispMin);
-
-	float **ppLensMeanDisp = new float*[rawImageParameter.m_yLensNum];
-	for (int i = 0; i < rawImageParameter.m_yLensNum; i++)
-		ppLensMeanDisp[i] = new float[rawImageParameter.m_xLensNum];
-
-#pragma omp parallel for
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
-			int x_begin = curCenterPos.x - rawImageParameter.m_xPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
-			int y_begin = curCenterPos.y - rawImageParameter.m_yPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
-			cv::Mat srcCost = tmpRawDisp(cv::Rect(x_begin, y_begin, MEAN_DISP_LEN_RADIUS * 2 + 1, MEAN_DISP_LEN_RADIUS * 2 + 1));
-			ppLensMeanDisp[y][x] = std::max(cv::mean(srcCost)[0], (double)(disparityParameter.m_dispMin));
-		}
-	}
-
-	//渲染开始
-	cv::Mat randerMapinput, randerSceneMap, finalRanderMap;
-	dataParameter.m_inputImgRec.convertTo(randerMapinput, CV_64FC3);
-	imageRander(ppLensMeanDisp, rawImageParameter, microImageParameter, randerMapinput, randerSceneMap);
-	std::string storeName = dataParameter.m_folderPath + "/randerSceneMap.bmp";
-	randerSceneMap.convertTo(finalRanderMap, CV_8UC3);
-	imwrite(storeName, finalRanderMap);
 
 
-	/*
-	cv::Mat sceneDisp = cv::Mat::zeros(rawDisp.rows, rawDisp.cols, CV_64FC1);
-	rawDisp.convertTo(sceneDisp, CV_64FC1, disparityParameter.m_dispStep, disparityParameter.m_dispMin);
-	cv::Mat randerDispMap, randerSparseDispMap;
-	imageRander(ppLensMeanDisp, rawImageParameter, microImageParameter, sceneDisp, randerDispMap);
-	randerDispMap.copyTo(randerSparseDispMap);
-	storeName = dataParameter.m_folderPath + "/randerDispMap.bmp";
-	dispMapShowForColor(storeName, randerDispMap);
 
-	*/
+void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp) {
+    RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
+    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
+    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
+
+    // 将 rawDisp 转换为浮点类型
+    cv::Mat tmpRawDisp;
+    rawDisp.convertTo(tmpRawDisp, CV_32F, disparityParameter.m_dispStep, disparityParameter.m_dispMin);
+
+    // 分配内存用于存储每个透镜的平均视差
+    float **ppLensMeanDisp = new float*[rawImageParameter.m_yLensNum];
+    for (int i = 0; i < rawImageParameter.m_yLensNum; i++) {
+        ppLensMeanDisp[i] = new float[rawImageParameter.m_xLensNum];
+    }
+
+    // 使用 CUDA 加速计算每个透镜的平均视差
+    #pragma omp parallel for
+    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
+            Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
+            int x_begin = curCenterPos.x - rawImageParameter.m_xPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
+            int y_begin = curCenterPos.y - rawImageParameter.m_yPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
+
+            // 检查边界，确保矩形区域在图像范围内
+            x_begin = max(0, x_begin);
+            y_begin = max(0, y_begin);
+            int width = min(MEAN_DISP_LEN_RADIUS * 2 + 1, tmpRawDisp.cols - x_begin);
+            int height = min(MEAN_DISP_LEN_RADIUS * 2 + 1, tmpRawDisp.rows - y_begin);
+
+            if (width > 0 && height > 0) {
+                // 提取当前区域的视差图
+                cv::Mat srcCost = tmpRawDisp(cv::Rect(x_begin, y_begin, width, height));
+
+                // 使用 CUDA 加速计算均值
+                cv::cuda::GpuMat gpuSrcCost;
+                gpuSrcCost.upload(srcCost); // 上传数据到 GPU
+
+                // 计算总和
+                cv::Scalar sumValue = cv::cuda::sum(gpuSrcCost);
+
+                // 计算均值
+                double meanValue = sumValue[0] / (srcCost.rows * srcCost.cols);
+                ppLensMeanDisp[y][x] = std::max(meanValue, (double)(disparityParameter.m_dispMin));
+            } else {
+                ppLensMeanDisp[y][x] = disparityParameter.m_dispMin; // 如果区域无效，使用最小视差
+            }
+        }
+    }
+
+    // 渲染开始
+    cv::Mat randerMapinput, randerSceneMap, finalRanderMap;
+    dataParameter.m_inputImgRec.convertTo(randerMapinput, CV_64FC3);
+
+    // 调用 imageRander 函数进行渲染
+    imageRander(ppLensMeanDisp, rawImageParameter, microImageParameter, randerMapinput, randerSceneMap);
+
+    // 保存渲染结果
+    std::string storeName = dataParameter.m_folderPath + "/randerSceneMap.bmp";
+    randerSceneMap.convertTo(finalRanderMap, CV_8UC3);
+    imwrite(storeName, finalRanderMap);
+
+    // 渲染视差图
+    cv::Mat sceneDisp = cv::Mat::zeros(rawDisp.rows, rawDisp.cols, CV_64FC1);
+    rawDisp.convertTo(sceneDisp, CV_64FC1, disparityParameter.m_dispStep, disparityParameter.m_dispMin);
+
+    cv::Mat randerDispMap, randerSparseDispMap;
+    imageRander(ppLensMeanDisp, rawImageParameter, microImageParameter, sceneDisp, randerDispMap);
+    randerDispMap.copyTo(randerSparseDispMap);
+
+    // 保存渲染后的视差图
+    storeName = dataParameter.m_folderPath + "/randerDispMap.bmp";
+    dispMapShowForColor(storeName, randerDispMap);
+
+    // 释放内存
+    for (int i = 0; i < rawImageParameter.m_yLensNum; i++) {
+        delete[] ppLensMeanDisp[i];
+    }
+    delete[] ppLensMeanDisp;
 }
 
-void ImageRander::imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg)
-{
-	RanderMapPatch **ppRanderMapPatch = new RanderMapPatch *[rawImageParameter.m_yLensNum];
-	for (int i = 0; i < rawImageParameter.m_yLensNum; i++)
-		ppRanderMapPatch[i] = new RanderMapPatch[rawImageParameter.m_xLensNum];
 
-#pragma omp parallel for
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			int blockSize = fabs(std::round(ppLensMeanDisp[y][x]));
-			Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
-			int starty = curCenterPos.y - blockSize / 2 - rawImageParameter.m_yPixelBeginOffset;
-			int startx = curCenterPos.x - blockSize / 2 - rawImageParameter.m_xPixelBeginOffset;
-			cv::Mat srcImg = randerImg(cv::Rect(startx, starty, blockSize, blockSize));
-			ppRanderMapPatch[y][x].sy = curCenterPos.y;
-			ppRanderMapPatch[y][x].sx = curCenterPos.x;
-			cv::Mat tmp;
-			//cv::resize(srcImg, tmp, cv::Size(DEST_WIDTH, DEST_HEIGHT), 0, 0, INTER_CUBIC);
-			cv::resize(srcImg, tmp, cv::Size(DEST_WIDTH, DEST_HEIGHT), 0, 0, cv::INTER_LINEAR);
-			cv::flip(tmp, ppRanderMapPatch[y][x].simg, -1);
-		}
-	}
+void ImageRander::imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg) {
+    // 使用 std::vector 管理内存，避免手动分配和释放
+    vector<vector<RanderMapPatch>> ppRanderMapPatch(
+        rawImageParameter.m_yLensNum,
+        vector<RanderMapPatch>(rawImageParameter.m_xLensNum)
+    );
 
-	int sx_begin = INT_MAX, sy_begin = INT_MAX;
-	int sx_end = INT_MIN, sy_end = INT_MIN;
+    // 并行化外层和内层循环
+    #pragma omp parallel for collapse(2)
+    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
+            int blockSize = fabs(std::round(ppLensMeanDisp[y][x]));
+            Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
+            int starty = curCenterPos.y - blockSize / 2 - rawImageParameter.m_yPixelBeginOffset;
+            int startx = curCenterPos.x - blockSize / 2 - rawImageParameter.m_xPixelBeginOffset;
 
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			sy_begin = std::min(sy_begin, ppRanderMapPatch[y][x].sy - ppRanderMapPatch[y][x].simg.rows / 2);
-			sx_begin = std::min(sx_begin, ppRanderMapPatch[y][x].sx - ppRanderMapPatch[y][x].simg.cols / 2);
-			sy_end = std::max(sy_end, ppRanderMapPatch[y][x].sy + ppRanderMapPatch[y][x].simg.rows / 2);
-			sx_end = std::max(sx_end, ppRanderMapPatch[y][x].sx + ppRanderMapPatch[y][x].simg.cols / 2);
-		}			
+            // 检查边界，确保矩形区域在图像范围内
+            startx = max(0, startx);
+            starty = max(0, starty);
+            int width = min(blockSize, randerImg.cols - startx);
+            int height = min(blockSize, randerImg.rows - starty);
 
-	}
+            if (width > 0 && height > 0) {
+                cv::Mat srcImg = randerImg(cv::Rect(startx, starty, width, height));
+                ppRanderMapPatch[y][x].sy = curCenterPos.y;
+                ppRanderMapPatch[y][x].sx = curCenterPos.x;
 
-	int randerMapWidth = sx_end - sx_begin + 1;
-	int randerMapHeight = sy_end - sy_begin + 1;
+                // 使用 CPU 进行图像缩放
+                cv::Mat tmp;
+                cv::resize(srcImg, tmp, cv::Size(DEST_WIDTH, DEST_HEIGHT), 0, 0, cv::INTER_LINEAR);
+                cv::flip(tmp, ppRanderMapPatch[y][x].simg, -1);
+            }
+        }
+    }
 
-	cv::Mat randerMap = cv::Mat::zeros(randerMapHeight, randerMapWidth, randerImg.type());
-	cv::Mat randerCount = cv::Mat::zeros(randerMapHeight, randerMapWidth, CV_64FC1);
-    cv::Mat tmpCount = cv::Mat::ones(DEST_HEIGHT * 2, DEST_WIDTH * 2, CV_64FC1);//修改此处的参数值
-	
+    // 计算渲染图的范围
+    int sx_begin = INT_MAX, sy_begin = INT_MAX;
+    int sx_end = INT_MIN, sy_end = INT_MIN;
 
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			//std::cout << "rander -- y = " << y << "x = " << x << endl;
+    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
+            sy_begin = min(sy_begin, ppRanderMapPatch[y][x].sy - ppRanderMapPatch[y][x].simg.rows / 2);
+            sx_begin = min(sx_begin, ppRanderMapPatch[y][x].sx - ppRanderMapPatch[y][x].simg.cols / 2);
+            sy_end = max(sy_end, ppRanderMapPatch[y][x].sy + ppRanderMapPatch[y][x].simg.rows / 2);
+            sx_end = max(sx_end, ppRanderMapPatch[y][x].sx + ppRanderMapPatch[y][x].simg.cols / 2);
+        }
+    }
 
-			int sy_b = ppRanderMapPatch[y][x].sy - ppRanderMapPatch[y][x].simg.rows / 2 - sy_begin;
-			int sy_e = ppRanderMapPatch[y][x].sy + ppRanderMapPatch[y][x].simg.rows / 2;
-			int sx_b = ppRanderMapPatch[y][x].sx - ppRanderMapPatch[y][x].simg.cols / 2 - sx_begin;
-			int sx_e = ppRanderMapPatch[y][x].sx + ppRanderMapPatch[y][x].simg.cols / 2;
+    int randerMapWidth = sx_end - sx_begin + 1;
+    int randerMapHeight = sy_end - sy_begin + 1;
 
-			cv::Mat randerMapRect = randerMap(cv::Rect(sx_b, sy_b, ppRanderMapPatch[y][x].simg.cols, ppRanderMapPatch[y][x].simg.rows));
-			cv::Mat randerCountRect = randerCount(cv::Rect(sx_b, sy_b, ppRanderMapPatch[y][x].simg.cols, ppRanderMapPatch[y][x].simg.rows));
-			cv::Mat randerMapCountTmp = tmpCount(cv::Rect(0, 0, ppRanderMapPatch[y][x].simg.cols, ppRanderMapPatch[y][x].simg.rows));
+    // 创建渲染图和计数图
+    cv::Mat randerMap = cv::Mat::zeros(randerMapHeight, randerMapWidth, randerImg.type());
+    cv::Mat randerCount = cv::Mat::zeros(randerMapHeight, randerMapWidth, CV_64FC1);
+    cv::Mat tmpCount = cv::Mat::ones(DEST_HEIGHT, DEST_WIDTH, CV_64FC1); // 确保大小匹配
 
-			randerMapRect = randerMapRect + ppRanderMapPatch[y][x].simg;
-			randerCountRect = randerCountRect + randerMapCountTmp;
-		}
-	}
+    // 使用 CUDA 加速矩阵操作
+    cv::cuda::GpuMat gpuRanderMap, gpuRanderCount;
+    gpuRanderMap.upload(randerMap);
+    gpuRanderCount.upload(randerCount);
 
-	for (int y = 0; y < randerMapHeight; y++)
-	{
-		double *yRanderData = (double *)randerMap.ptr<double>(y);
-		double *yRanderCount = (double *)randerCount.ptr<double>(y);
-		for (int x = 0; x < randerMapWidth; x++)
-		{
-			if (yRanderCount[x] < 1.0)
-				continue;
-			else
-			{
-				if (randerMap.channels() == 3){
-					yRanderData[3 * x] /= yRanderCount[x];
-					yRanderData[3 * x + 1] /= yRanderCount[x];
-					yRanderData[3 * x + 2] /= yRanderCount[x];
-				}
-				else
-					yRanderData[x] /= yRanderCount[x];
-			}
-		}
-	}
+    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
+            int sy_b = ppRanderMapPatch[y][x].sy - ppRanderMapPatch[y][x].simg.rows / 2 - sy_begin;
+            int sx_b = ppRanderMapPatch[y][x].sx - ppRanderMapPatch[y][x].simg.cols / 2 - sx_begin;
 
-	cv::Mat repairMap;
-	imageRanderRepair(rawImageParameter, randerMap, repairMap, ppRanderMapPatch, sx_begin, sy_begin);
-	cv::resize(repairMap, destImg, cv::Size(0, 0), RANDER_SCALE, RANDER_SCALE, INTER_CUBIC);
+            // 提取 ROI，确保大小与 tmpCount 和 gpuPatch 匹配
+            cv::Rect roi(sx_b, sy_b, DEST_WIDTH, DEST_HEIGHT);
+            cv::cuda::GpuMat gpuRanderMapROI = gpuRanderMap(roi);
+            cv::cuda::GpuMat gpuRanderCountROI = gpuRanderCount(roi);
 
-	//std::string storeName = m_folderName + "/subAperature.bmp";
-	//Mat finalRanderMap;
-	//smallRanderMap.convertTo(finalRanderMap, CV_8UC3);
-	//imwrite(storeName, finalRanderMap);
+            // 上传 gpuPatch 和 tmpCount
+            cv::cuda::GpuMat gpuPatch;
+            gpuPatch.upload(ppRanderMapPatch[y][x].simg);
 
-	for (int i = 0; i < rawImageParameter.m_yLensNum; i++)
-		delete[]ppRanderMapPatch[i];
-	delete[]ppRanderMapPatch;
+            cv::cuda::GpuMat gpuTmpCount;
+            gpuTmpCount.upload(tmpCount);
+
+            // 执行 CUDA 加法
+            cv::cuda::add(gpuRanderMapROI, gpuPatch, gpuRanderMapROI);
+            cv::cuda::add(gpuRanderCountROI, gpuTmpCount, gpuRanderCountROI);
+        }
+    }
+
+    // 下载结果到 CPU
+    gpuRanderMap.download(randerMap);
+    gpuRanderCount.download(randerCount);
+
+    // 归一化渲染图
+    for (int y = 0; y < randerMapHeight; y++) {
+        double *yRanderData = (double *)randerMap.ptr<double>(y);
+        double *yRanderCount = (double *)randerCount.ptr<double>(y);
+        for (int x = 0; x < randerMapWidth; x++) {
+            if (yRanderCount[x] >= 1.0) {
+                if (randerMap.channels() == 3) {
+                    yRanderData[3 * x] /= yRanderCount[x];
+                    yRanderData[3 * x + 1] /= yRanderCount[x];
+                    yRanderData[3 * x + 2] /= yRanderCount[x];
+                } else {
+                    yRanderData[x] /= yRanderCount[x];
+                }
+            }
+        }
+    }
+
+    // 将 std::vector<std::vector<RanderMapPatch>> 转换为 RanderMapPatch**
+    RanderMapPatch **ppRanderMapPatchArray = new RanderMapPatch*[rawImageParameter.m_yLensNum];
+    for (int i = 0; i < rawImageParameter.m_yLensNum; i++) {
+        ppRanderMapPatchArray[i] = ppRanderMapPatch[i].data();
+    }
+
+    // 修复渲染图并调整大小
+    cv::Mat repairMap;
+    imageRanderRepair(rawImageParameter, randerMap, repairMap, ppRanderMapPatchArray, sx_begin, sy_begin);
+    cv::resize(repairMap, destImg, cv::Size(0, 0), RANDER_SCALE, RANDER_SCALE, INTER_CUBIC);
+
+    // 释放内存
+    delete[] ppRanderMapPatchArray;
 }
 
 /*
@@ -318,35 +375,82 @@ void ImageRander::imageRander(float **ppLensMeanDisp, const RawImageParameter &r
 		}
 	}
 }*/
-void ImageRander::imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin)
-{//去除边界黑色空洞
-	int randerMapHeight = randerMap.rows;
-	int randerMapWidth = randerMap.cols;
+void ImageRander::imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin) {
+    int randerMapHeight = randerMap.rows;
+    int randerMapWidth = randerMap.cols;
 
-	int left = rawImageParameter.m_xCenterBeginOffset;
-	int right = rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset - 1;
-	int top = rawImageParameter.m_yCenterBeginOffset;
-	int below = rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset - 1;
+    int left = rawImageParameter.m_xCenterBeginOffset;
+    int right = rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset - 1;
+    int top = rawImageParameter.m_yCenterBeginOffset;
+    int below = rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset - 1;
 
-	int x_left = 0;
-	int x_right = randerMapWidth;
-	int y_top = 0;
-	int y_below = randerMapHeight;
+    int x_left = 0;
+    int x_right = randerMapWidth;
+    int y_top = 0;
+    int y_below = randerMapHeight;
 
-	for (int y = top; y <= below; y++)
-	{
-		x_left = std::max(int(ppRanderMapPatch[y][left].sx - ppRanderMapPatch[y][left].simg.cols / 2 - sx_begin), x_left);
-		x_right = std::min(int(ppRanderMapPatch[y][right].sx - ppRanderMapPatch[y][right].simg.cols / 2 - sx_begin + ppRanderMapPatch[y][right].simg.cols), x_right);
-	}
-	for (int x = left; x <= right; x++)
-	{
-		y_top = std::max(int(ppRanderMapPatch[top][x].sy - ppRanderMapPatch[top][x].simg.rows / 2 - sy_begin), y_top);
-		y_below = std::min(int(ppRanderMapPatch[below][x].sy - ppRanderMapPatch[below][x].simg.rows / 2 - sy_begin + ppRanderMapPatch[below][x].simg.rows), y_below);
-	}
+    // 预计算 left 和 right 的 sx 和 simg.cols
+    vector<int> left_sx(below - top + 1);
+    vector<int> left_cols(below - top + 1);
+    vector<int> right_sx(below - top + 1);
+    vector<int> right_cols(below - top + 1);
 
-	randerMap(cv::Rect(x_left, y_top, x_right - x_left, y_below - y_top)).copyTo(repairMap);
+    #pragma omp parallel for
+    for (int y = top; y <= below; y++) {
+        left_sx[y - top] = ppRanderMapPatch[y][left].sx;
+        left_cols[y - top] = ppRanderMapPatch[y][left].simg.cols;
+        right_sx[y - top] = ppRanderMapPatch[y][right].sx;
+        right_cols[y - top] = ppRanderMapPatch[y][right].simg.cols;
+    }
+
+    // 计算 x_left 和 x_right
+    #pragma omp parallel for reduction(max:x_left) reduction(min:x_right)
+    for (int y = top; y <= below; y++) {
+        x_left = max(x_left, int(left_sx[y - top] - left_cols[y - top] / 2 - sx_begin));
+        x_right = min(x_right, int(right_sx[y - top] - right_cols[y - top] / 2 - sx_begin + right_cols[y - top]));
+    }
+
+    // 预计算 top 和 below 的 sy 和 simg.rows
+    vector<int> top_sy(right - left + 1);
+    vector<int> top_rows(right - left + 1);
+    vector<int> below_sy(right - left + 1);
+    vector<int> below_rows(right - left + 1);
+
+    #pragma omp parallel for
+    for (int x = left; x <= right; x++) {
+        top_sy[x - left] = ppRanderMapPatch[top][x].sy;
+        top_rows[x - left] = ppRanderMapPatch[top][x].simg.rows;
+        below_sy[x - left] = ppRanderMapPatch[below][x].sy;
+        below_rows[x - left] = ppRanderMapPatch[below][x].simg.rows;
+    }
+
+    // 计算 y_top 和 y_below
+    #pragma omp parallel for reduction(max:y_top) reduction(min:y_below)
+    for (int x = left; x <= right; x++) {
+        y_top = max(y_top, int(top_sy[x - left] - top_rows[x - left] / 2 - sy_begin));
+        y_below = min(y_below, int(below_sy[x - left] - below_rows[x - left] / 2 - sy_begin + below_rows[x - left]));
+    }
+
+    // 检查边界，确保提取的区域在图像范围内
+    x_left = max(0, x_left);
+    y_top = max(0, y_top);
+    x_right = min(randerMapWidth, x_right);
+    y_below = min(randerMapHeight, y_below);
+
+    // 使用 CUDA 加速矩阵拷贝
+    cv::cuda::GpuMat gpuRanderMap, gpuRepairMap;
+    gpuRanderMap.upload(randerMap);
+
+    if (x_right > x_left && y_below > y_top) {
+        cv::Rect roi(x_left, y_top, x_right - x_left, y_below - y_top);
+        gpuRepairMap = gpuRanderMap(roi).clone();
+    } else {
+        gpuRepairMap = cv::cuda::GpuMat(randerMap.size(), randerMap.type(), cv::Scalar(0));
+    }
+
+    // 下载结果到 CPU
+    gpuRepairMap.download(repairMap);
 }
-
 void ImageRander::outputSparseSceneDepth(string folderName, cv::Mat &sceneSparseDepth, cv::Mat &sceneDepthMask)
 {
 	std::string storeName;

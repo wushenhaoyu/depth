@@ -94,47 +94,71 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 		}
 	}
 }*/
+#include <opencv2/cudafilters.hpp>  // CUDA 滤波器模块
+#include <opencv2/cudaarithm.hpp>   // CUDA 算术操作模块
+#include <omp.h>                    // OpenMP 并行化
 
-void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol)
-{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
-	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-	FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
+void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol) {
+    RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
+    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
+    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
+    FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
 
-//#pragma omp parallel for 
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			//std::cout << "cost filter --- y=" << y << "\tx=" << x << std::endl;
-			costVolWindowFilter(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter, filterPatameter);
-		}
-	}
-	//costVolBoundaryRepair(costVolFilter, disparityParameter, filterPatameter);
+    // 使用 OpenMP 并行化外层循环
+    #pragma omp parallel for
+    for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++) {
+            costVolWindowFilter(costVol, y, x, rawImageParameter, microImageParameter, disparityParameter, filterPatameter);
+        }
+    }
 }
 
 void CostVolFilter::costVolWindowFilter(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
-	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter)
-{//锟斤拷costVol锟斤拷锟叫达拷锟斤拷锟剿诧拷
-	Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
-	int xBegin = curCenterPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
-	int yBegin = curCenterPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
-	int xEnd = curCenterPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow;
-	int yEnd = curCenterPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow;
+    const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter) {
+    Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
+    int xBegin = curCenterPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
+    int yBegin = curCenterPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow;
+    int xEnd = curCenterPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow;
+    int yEnd = curCenterPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow;
 
-	cv::Mat divideMask = (*filterPatameter.m_pValidNeighborPixelsNum)(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
-	cv::Mat multiMask = (*filterPatameter.m_pValidPixelsMask)(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
-	cv::Mat destCost;
-	for (int d = 0; d < disparityParameter.m_disNum; d++)
-	{
-		cv::Mat srcCost = costVol[d](cv::Rect(xBegin - rawImageParameter.m_xPixelBeginOffset, yBegin - rawImageParameter.m_yPixelBeginOffset, xEnd - xBegin + 1, yEnd - yBegin + 1));
-		//cv::Mat destCost = cv::Mat::zeros(yEnd - yBegin + 1, xEnd - xBegin + 1, CV_32F);
-		cv::filter2D(srcCost, destCost, -1, filterPatameter.m_filterKnernel, cv::Point(-1, -1), 0, BORDER_CONSTANT);//这里改回(-1,-1)可能会出现中断，原因不明，但不改滤波效果很差
-		cv::divide(destCost, divideMask, destCost);
-		cv::multiply(destCost, multiMask, destCost);
-		destCost.copyTo(srcCost);
-	}
+    // 检查边界，确保矩形区域在图像范围内
+    xBegin = max(0, xBegin);
+    yBegin = max(0, yBegin);
+    xEnd = min(filterPatameter.m_pValidNeighborPixelsNum->cols - 1, xEnd);
+    yEnd = min(filterPatameter.m_pValidNeighborPixelsNum->rows - 1, yEnd);
+
+    if (xEnd < xBegin || yEnd < yBegin) {
+        return; // 如果区域无效，直接返回
+    }
+
+    // 提取 divideMask 和 multiMask
+    cv::Mat divideMask = (*filterPatameter.m_pValidNeighborPixelsNum)(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
+    cv::Mat multiMask = (*filterPatameter.m_pValidPixelsMask)(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
+
+    // 使用 CUDA 加速滤波操作
+    cv::cuda::GpuMat gpuDivideMask, gpuMultiMask, gpuSrcCost, gpuDestCost;
+    gpuDivideMask.upload(divideMask);
+    gpuMultiMask.upload(multiMask);
+
+    // 创建 CUDA 滤波器
+    cv::Ptr<cv::cuda::Filter> filter = cv::cuda::createLinearFilter(
+        CV_32F, CV_32F, filterPatameter.m_filterKnernel, cv::Point(-1, -1), cv::BORDER_CONSTANT);
+
+    for (int d = 0; d < disparityParameter.m_disNum; d++) {
+        // 提取 srcCost
+        cv::Mat srcCost = costVol[d](cv::Rect(xBegin - rawImageParameter.m_xPixelBeginOffset, yBegin - rawImageParameter.m_yPixelBeginOffset, xEnd - xBegin + 1, yEnd - yBegin + 1));
+        gpuSrcCost.upload(srcCost);
+
+        // 使用 CUDA 进行滤波
+        filter->apply(gpuSrcCost, gpuDestCost);
+
+        // 使用 CUDA 进行除法和乘法操作
+        cv::cuda::divide(gpuDestCost, gpuDivideMask, gpuDestCost);
+        cv::cuda::multiply(gpuDestCost, gpuMultiMask, gpuDestCost);
+
+        // 下载结果到 CPU
+        gpuDestCost.download(srcCost);
+    }
 }
 
 /*

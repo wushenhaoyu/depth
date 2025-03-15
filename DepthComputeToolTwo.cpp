@@ -7,6 +7,7 @@
 #include "ConfidenceCompute.h"
 #include "SceneDepthCompute.h"
 #include "ImageRander.h"
+#include <chrono>
 #include <time.h>
 
 DepthComputeToolTwo::DepthComputeToolTwo()
@@ -23,12 +24,13 @@ void DepthComputeToolTwo::parameterInit(std::string dataFolderName, std::string 
 	int yCenterBeginOffset, int xCenterBeginOffset, int yCenterEndOffset, int xCenterEndOffset, int filterRadius, float circleDiameter, 
 	float circleNarrow, int dispMin, int dispMax, float dispStep)
 {
-	clock_t t1 = clock();
+	auto start = std::chrono::high_resolution_clock::now();
 	m_dataParameter.init(dataFolderName, centerPointFileName, inputRawImgName,
 		yCenterBeginOffset, xCenterBeginOffset, yCenterEndOffset, xCenterEndOffset,
 		filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
-	clock_t t2 = clock();
-	std::cout << "init parameter use  time: " << (t2 - t1)  << " ms " << std::endl;
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "init parameter use  time: " << duration  << " ms " << std::endl;
 }
 
 void DepthComputeToolTwo::rawImageDisparityCompute()
@@ -74,11 +76,12 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	
 
 	CostVolFilter costVolFilter;
-	t1 = clock();
+	auto start = std::chrono::high_resolution_clock::now();
 	costVolFilter.costVolWindowFilter(m_dataParameter, costVol);
-	t2 = clock();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	//std::cout << "init raw cost vol filter use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
-	std::cout << "init raw cost vol filter use time: " << (t2 - t1)  << " ms " << std::endl;
+	std::cout << "init raw cost vol filter use time: " << duration << " ms " << std::endl;
 	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
 	storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
 	dataDeal.dispMapShow(storeName, rawDisp);//锟斤拷锟斤拷
@@ -125,12 +128,13 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	*/
 
 	ImageRander imageRander;
-	t1 = clock();
+	start = std::chrono::high_resolution_clock::now();
 //	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
 	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
-	t2 = clock();
-	std::cout << "sub aperature rander use time: " << (t2 - t1)  << " ms " << std::endl;
-	outfile << "sub aperature rander use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds \n";
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "sub aperature rander use time: " << duration   << " ms " << std::endl;
+	outfile << "sub aperature rander use time: " << duration  / CLOCKS_PER_SEC << " seconds \n";
 	
 	outfile.close();
 	delete[]costVol;
