@@ -38,7 +38,7 @@ void ToolTwoTestDemo::data1compute()
 	int dispMax = 25; //�Ӳ����ֵ
 	float dispStep =1  ; //�Ӳ����ֵ            
 
-	string folderName = "/home/jetson/Desktop/light";//����м������ļ���
+	string folderName = "/home/jetson/Desktop/depth";//����м������ļ���
 	string inputRawImg = "205.bmp";
 
 	string centerPointFile = "points.txt";
@@ -241,7 +241,7 @@ void ToolTwoTestDemo::data5compute()
 	*/
 	
 
-	string folderName = "/home/jetson/Desktop/light/205_66";//����м������ļ���
+	string folderName = "/home/jetson/Desktop/depth/205_66";//����м������ļ���
 	string inputRawImg = "66_5.bmp";
 	string centerPointFile = "points.txt";
 

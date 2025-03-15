@@ -48,8 +48,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/jetson/Desktop/light/build",
-		"source" : "/home/jetson/Desktop/light"
+		"build" : "/home/jetson/Desktop/depth/build",
+		"source" : "/home/jetson/Desktop/depth"
 	},
 	"version" : 
 	{
