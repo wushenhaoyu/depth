@@ -38,7 +38,7 @@ void ToolTwoTestDemo::data1compute()
 	int dispMax = 25; //锟接诧拷锟斤拷锟街�
 	float dispStep =1  ; //锟接诧拷锟斤拷锟街�            
 
-	string folderName = "/home/jetson/Desktop/light";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
+	string folderName = "/home/jetson/Desktop/light";//����м������ļ���
 	string inputRawImg = "205.bmp";
 
 	string centerPointFile = "points.txt";
@@ -241,7 +241,7 @@ void ToolTwoTestDemo::data5compute()//主要函数
 	
 	
 
-	string folderName = "/home/jetson/Desktop/light/205_66";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
+	string folderName = "/home/jetson/Desktop/light/205_66";//����м������ļ���
 	string inputRawImg = "66_5.bmp";
 	string centerPointFile = "points.txt";
 

@@ -42,7 +42,7 @@ rule CXX_EXECUTABLE_LINKER__MyProject
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/bin/cmake -S/home/jetson/Desktop/light -B/home/jetson/Desktop/light/build
+  command = /usr/bin/cmake -S/home/jetson/Desktop/depth -B/home/jetson/Desktop/depth/build
   description = Re-running CMake...
   generator = 1
 
