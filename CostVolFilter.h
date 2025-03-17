@@ -29,8 +29,6 @@ private:
 	void costVolBoundaryRepair(cv::Mat *costVol, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter);//��Բ�α߽���д���
 	void costVolWindowFilter(cv::Mat *costVol, cv::Mat *costVolFilter, int y, int x, const RawImageParameter &rawImageParameter,
 		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter);//��costVol���д����˲�
-	void costVolWindowFilter(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
-		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, const FilterPatameter &filterPatameter);//��costVol���д����˲�
 };
 
 #endif // !__COSTVOLFILTER_H_

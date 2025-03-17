@@ -21,7 +21,7 @@
                 "${workspaceFolder}/ImageRander.cpp",
                 "${workspaceFolder}/SceneDepthCompute.cpp",
                 "${workspaceFolder}/VirtualDepthCompute.cpp",
-                "${workspaceFolder}/CostVolFilter.cpp",
+                "${workspaceFolder}/CostVolFilter.cu",
                 "${workspaceFolder}/DataParameter.cpp",
                 "${workspaceFolder}/CAST/STCA.cpp",
                 "${workspaceFolder}/CAST/StereoDisparity.cpp",
