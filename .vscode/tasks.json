@@ -2,12 +2,13 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: g++ 编译 OpenCV 项目",
-            "command": "/usr/bin/g++",
+            "label": "C/C++: nvcc 编译 OpenCV + CUDA 项目",
+            "command": "/usr/local/cuda/bin/nvcc",
             "args": [
-                "-fdiagnostics-color=always",
-                "-g",
                 "-std=c++17",
+                "-g",
+                "-o",
+                "${workspaceFolder}/bin/main",
                 "${workspaceFolder}/main.cpp",
                 "${workspaceFolder}/ConfidenceCompute.cpp",
                 "${workspaceFolder}/ToolOneTestDemo.cpp",
@@ -16,7 +17,6 @@
                 "${workspaceFolder}/DataDeal.cpp",
                 "${workspaceFolder}/DepthComputeToolOne.cpp",
                 "${workspaceFolder}/DepthComputeToolTwo.cpp",
-                //"${workspaceFolder}/DisparityRefinement.cpp",
                 "${workspaceFolder}/GlobalOptimization.cpp",
                 "${workspaceFolder}/ImageRander.cpp",
                 "${workspaceFolder}/SceneDepthCompute.cpp",
@@ -29,20 +29,23 @@
                 "${workspaceFolder}/CAST/SegmentTree.cpp",
                 "${workspaceFolder}/CAST/Toolkit.cpp",
                 "${workspaceFolder}/CAST/ctmf.o",
-                "-o",
-                "${workspaceFolder}/bin/main",
-                "-I/usr/local/include/opencv4",
-                "-I${workspaceFolder}/gcov3",  // GCO 头文件路径
-                "-L/usr/local/lib",
+                "-I/usr/local/include/opencv4",  // OpenCV 头文件路径
+                "-I${workspaceFolder}/gcov3",    // GCO 头文件路径
+                "-I${workspaceFolder}/CAST",    // CAST 头文件路径
+                "-I/usr/local/cuda/include",    // CUDA 头文件路径
+                "-L/usr/local/lib",             // OpenCV 库路径
+                "-L/usr/local/cuda/lib64",      // CUDA 库路径
+                "-L${workspaceFolder}/gcov3",   // GCO 库路径
                 "-lopencv_core",
                 "-lopencv_imgcodecs",
                 "-lopencv_highgui",
                 "-lopencv_imgproc",
-                "-lopencv_cudaimgproc",  // 添加 OpenCV CUDA 图像处理模块
-                "-lopencv_cudafilters",  // 添加 OpenCV CUDA 滤波器模块
-                "-L${workspaceFolder}/gcov3",  // GCO 库路径
-                "-lGCoptimization",             // 链接 GCO
-                "-I${workspaceFolder}/CAST"
+                "-lopencv_cudaimgproc",         // OpenCV CUDA 图像处理模块
+                "-lopencv_cudafilters",         // OpenCV CUDA 滤波器模块
+                "-lcudart",                     // CUDA 运行时库
+                "-lcublas",                     // CUDA BLAS 库
+                "-lcudnn",                      // 如果使用 cuDNN，需要链接
+                "-lGCoptimization"              // 链接 GCO
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -54,7 +57,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "OpenCV 项目编译任务"
+            "detail": "OpenCV + CUDA 项目编译任务"
         }
     ],
     "version": "2.0.0"

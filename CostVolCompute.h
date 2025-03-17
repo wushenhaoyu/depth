@@ -1,10 +1,10 @@
 /*!
  * \class 
  *
- * \brief ÊÓ²îµÄDataCost¼ÆËãÄ£¿é£¬¿ÉÒÔÀ©Õ¹²»Í¬µÄCost¼ÆËãº¯Êı½øĞĞ¸Ä½ø
+ * \brief ï¿½Ó²ï¿½ï¿½DataCostï¿½ï¿½ï¿½ï¿½Ä£ï¿½é£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½Í¬ï¿½ï¿½Costï¿½ï¿½ï¿½ãº¯ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¸Ä½ï¿½
  *
  * \author liuqian
- * \date Ò»ÔÂ 2018
+ * \date Ò»ï¿½ï¿½ 2018
  */
 
 #ifndef __COSTVOLCOMPUTE_H_
@@ -23,28 +23,29 @@ public:
 	CostVolCompute();
 	~CostVolCompute();
 
-	void costVolDataCompute(const DataParameter &dataParameter, cv::Mat *costVol); //ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost
+	void costVolDataCompute(const DataParameter &dataParameter, cv::Mat *costVol); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½RawÍ¼ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½dataCost
 private:
 	void costVolDataCompute(cv::Mat *costVol, int y, int x, const RawImageParameter &rawImageParameter,
 		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter);
-	//ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost--¼ÆËãÃ¿¸ö×ÓÍ¼ÏñÖĞÃ¿¸öÏñËØµÄcost
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½RawÍ¼ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½dataCost--ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½cost
 
 	float costVolDataCompute(int y, int x, int py, int px, int d, const RawImageParameter &rawImageParameter,
 		const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter); 
-	//ÓÃÀ´¼ÆËãRawÍ¼Ïñ¶ÔÓ¦µÄdataCost--¼ÆËãÃ¿¸öÏñËØÓëÖÜÎ§µÄÏñËØµÄÆ¥ÅäÖµ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½RawÍ¼ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½dataCost--ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½Æ¥ï¿½ï¿½Öµ
 
-	bool isCurPointValid(Point2d &matchPoint, int matchCenterIndex, const RawImageParameter &rawImageParameter,
-		const MicroImageParameter &microImageParameter); //ÅĞ¶Ï´ËÎ»ÖÃµÄÆ¥ÅäµãÊÇ·ñºÏÀí
+	bool isCurPointValid(const Point2d& matchPoint, int matchCenterIndex, 
+                                     const RawImageParameter& rawImageParameter, 
+                                     const MicroImageParameter& microImageParameter); //ï¿½Ğ¶Ï´ï¿½Î»ï¿½Ãµï¿½Æ¥ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 
-	float bilinearInsertValue(const Point2d &curPoint, const Point2d &matchPoint); //¼ÆËãÖĞĞÄµãÓëÆ¥Åäµã¼äµÄcostÖµ
+	float bilinearInsertValue(const Point2d &curPoint, const Point2d &matchPoint); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½Æ¥ï¿½ï¿½ï¿½ï¿½ï¿½costÖµ
 
-	inline float myCostGrd(float* lC, float* rC, float* lG, float* rG); //ÑÕÉ«ÓëÌİ¶È½øĞĞ¼ÓÈ¨
+	inline float  myCostGrd(const float* lC, const float* rC, const float* lG, const float* rG); //ï¿½ï¿½É«ï¿½ï¿½ï¿½İ¶È½ï¿½ï¿½Ğ¼ï¿½È¨
 
-	inline float myCostGrd(float* lC, float* lG); //ÑÕÉ«ÓëÌİ¶È¼ÓÈ¨£¬±ß½ç´¦Àí
+	inline float myCostGrd(float* lC, float* lG); //ï¿½ï¿½É«ï¿½ï¿½ï¿½İ¶È¼ï¿½È¨ï¿½ï¿½ï¿½ß½ç´¦ï¿½ï¿½
 
 private:
-	cv::Mat m_inputImg; //ÊäÈëÔ­Ê¼Í¼Ïñ
-	cv::Mat m_gradImg; //Ô­Ê¼Í¼Ïñ¶ÔÓ¦µÄÌİ¶ÈÍ¼Ïñ
+	cv::Mat m_inputImg; //ï¿½ï¿½ï¿½ï¿½Ô­Ê¼Í¼ï¿½ï¿½
+	cv::Mat m_gradImg; //Ô­Ê¼Í¼ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½İ¶ï¿½Í¼ï¿½ï¿½
 
 };
 
