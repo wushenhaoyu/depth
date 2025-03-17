@@ -42,6 +42,9 @@
                 "-lopencv_imgproc",
                 "-lopencv_cudaimgproc",
                 "-lopencv_cudafilters",
+                "-lopencv_cudaimgproc",  // CUDA图像处理模块
+                "-lopencv_cudafilters",  // CUDA滤波器模块
+                "-lopencv_cudaarithm", //加法
                 "-lcudart",
                 "-lcublas",
                 "-lcudnn", // 如果使用cuDNN

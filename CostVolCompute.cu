@@ -2,6 +2,9 @@
 #include "DataParameter.h"
 #include <cuda_runtime.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/cudaimgproc.hpp>  // 提供CUDA图像处理函数（如cvtColor）
+#include <opencv2/cudafilters.hpp>   // 提供CUDA滤波器（如Sobel）
+#include <opencv2/cudaarithm.hpp>
 #include <iostream>
 
 using namespace cv;
@@ -30,7 +33,7 @@ struct CudaPoint2f {
 __global__ void computeCostVolKernel(
     const float* d_inputImg, const float* d_gradImg, float* d_costVol,
     const int* d_pixelsMappingSet,
-    const CudaPoint2f* d_lensCenterPoints,
+    const float2* d_lensCenterPoints,
     const MatchNeighborLens* d_matchNeighborLens,
     int width, int height, int channels,
     int xLensNum, int yLensNum,
@@ -53,7 +56,7 @@ __global__ void computeCostVolKernel(
     // 检查是否属于当前微透镜的映射范围
     if (d_pixelsMappingSet[py * width + px] != curCenterIndex) return;
 
-    const CudaPoint2f& centerPos = d_lensCenterPoints[curCenterIndex];
+    const float2& centerPos = d_lensCenterPoints[curCenterIndex];
     const MatchNeighborLens* matchNeighborLens = &d_matchNeighborLens[curCenterIndex * NEIGHBOR_MATCH_LENS_NUM_];
 
     for (int d = 0; d < disparityNum; d++) {
@@ -69,7 +72,7 @@ __global__ void computeCostVolKernel(
             if (matchCenterPos_y < 0) break;
 
             // 计算匹配点的坐标
-            CudaPoint2f matchPoint;
+            float2 matchPoint;
             matchPoint.y = (centerDis + realDisp) * (matchCenterPos_y - centerPos.y) / centerDis + py;
             matchPoint.x = (centerDis + realDisp) * (matchCenterPos_x - centerPos.x) / centerDis + px;
 
@@ -144,9 +147,7 @@ __global__ void computeCostVolKernel(
     }
 }
 
-// 主机代码：调用CUDA内核
-void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat* costVol)
-{
+void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat* costVol) {
     // 初始化参数
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
     MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
@@ -161,35 +162,33 @@ void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat*
     Mat inputImgFloat;
     dataParameter.m_inputImg.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
 
-    // 计算灰度图和梯度图
-    Mat gradImg;
-    cvtColor(inputImgFloat, gradImg, COLOR_BGR2GRAY);
-    gradImg.convertTo(gradImg, CV_32F, 1.0f / 255.0f);
-    Mat gradX, gradY;
-    Sobel(gradImg, gradX, CV_32F, 1, 0, 1);
-    Sobel(gradImg, gradY, CV_32F, 0, 1, 1);
-    gradImg = gradX + gradY;
+    // 使用OpenCV CUDA计算灰度图和梯度图
+    cuda::GpuMat d_inputImg, d_grayImg, d_gradX, d_gradY, d_gradImg;
+    d_inputImg.upload(inputImgFloat);
+
+    cuda::cvtColor(d_inputImg, d_grayImg, COLOR_BGR2GRAY);
+    Ptr<cuda::Filter> sobelX = cuda::createSobelFilter(CV_32F, CV_32F, 1, 0, 3);
+    Ptr<cuda::Filter> sobelY = cuda::createSobelFilter(CV_32F, CV_32F, 0, 1, 3);
+    sobelX->apply(d_grayImg, d_gradX);
+    sobelY->apply(d_grayImg, d_gradY);
+
+    // 计算梯度幅度
+    cv::cuda::addWeighted(d_gradX, 0.5, d_gradY, 0.5, 0.0, d_gradImg);
 
     // 分配GPU内存
-    float* d_inputImg;
-    float* d_gradImg;
     float* d_costVol;
     int* d_pixelsMappingSet;
-    CudaPoint2f* d_lensCenterPoints;
+    float2* d_lensCenterPoints;
     MatchNeighborLens* d_matchNeighborLens;
 
-    cudaMalloc(&d_inputImg, width * height * channels * sizeof(float));
-    cudaMalloc(&d_gradImg, width * height * sizeof(float));
     cudaMalloc(&d_costVol, width * height * disparityNum * sizeof(float));
     cudaMalloc(&d_pixelsMappingSet, width * height * sizeof(int));
-    cudaMalloc(&d_lensCenterPoints, rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * sizeof(CudaPoint2f));
+    cudaMalloc(&d_lensCenterPoints, rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * sizeof(float2));
     cudaMalloc(&d_matchNeighborLens, rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * NEIGHBOR_MATCH_LENS_NUM * sizeof(MatchNeighborLens));
 
     // 将数据从主机内存复制到设备内存
-    cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), width * height * channels * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_gradImg, gradImg.ptr<float>(0), width * height * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_pixelsMappingSet, microImageParameter.m_ppPixelsMappingSet[0], width * height * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_lensCenterPoints, microImageParameter.m_ppLensCenterPoints[0], rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * sizeof(CudaPoint2f), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_lensCenterPoints, microImageParameter.m_ppLensCenterPoints[0], rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * sizeof(float2), cudaMemcpyHostToDevice);
     cudaMemcpy(d_matchNeighborLens, microImageParameter.m_ppMatchNeighborLens[0], rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * NEIGHBOR_MATCH_LENS_NUM * sizeof(MatchNeighborLens), cudaMemcpyHostToDevice);
 
     // 配置线程块和网格大小
@@ -198,7 +197,7 @@ void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat*
 
     // 启动CUDA内核
     computeCostVolKernel<<<gridSize, blockSize>>>(
-        d_inputImg, d_gradImg, d_costVol,
+        (float*)d_inputImg.data, (float*)d_gradImg.data, d_costVol,
         d_pixelsMappingSet,
         d_lensCenterPoints,
         d_matchNeighborLens,
@@ -218,8 +217,6 @@ void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat*
     }
 
     // 释放设备内存
-    cudaFree(d_inputImg);
-    cudaFree(d_gradImg);
     cudaFree(d_costVol);
     cudaFree(d_pixelsMappingSet);
     cudaFree(d_lensCenterPoints);
