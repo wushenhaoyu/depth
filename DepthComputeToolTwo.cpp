@@ -112,8 +112,8 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	confidenceCompute.confidenceMeasureCompute(m_dataParameter, costVol);
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	std::cout << "confident measure compute use time: " << duration / CLOCKS_PER_SEC << " seconds " << std::endl;
-	outfile << "confident measure compute use time: " << duration / CLOCKS_PER_SEC << " seconds \n";
+	std::cout << "confident measure compute use time: " << duration << " ms" << std::endl;
+	outfile << "confident measure compute use time: " << duration << " ms \n";
 	cv::Mat *pConfidentMask = confidenceCompute.getConfidentMask();
 	
 

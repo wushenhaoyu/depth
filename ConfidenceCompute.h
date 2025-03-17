@@ -1,10 +1,10 @@
 /*!
  * \class ConfidenceCompute
  *
- * \brief ÖÃÐÅ¶ÈÖ¸±êµÄ¼ÆËã
+ * \brief ï¿½ï¿½ï¿½Å¶ï¿½Ö¸ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½
  *
  * \author liuqian
- * \date Ò»ÔÂ 2018
+ * \date Ò»ï¿½ï¿½ 2018
  */
 
 #ifndef __CONFIDENCECOMPUTE_H__
@@ -28,21 +28,17 @@ public:
 
 	ConfidenceCompute();
 	~ConfidenceCompute();
-	void confidenceMeasureCompute(const DataParameter &dataParameter, cv::Mat *&costVol); //ÖÃÐÅ¶È¼ÆËã¿ªÊ¼
+	void confidenceMeasureCompute(const DataParameter &dataParameter, cv::Mat *&costVol); //ï¿½ï¿½ï¿½Å¶È¼ï¿½ï¿½ã¿ªÊ¼
 	cv::Mat *getConfidentMask() const
-	{//»ñÈ¡ÖÃÐÅ¶Èmask
+	{//ï¿½ï¿½È¡ï¿½ï¿½ï¿½Å¶ï¿½mask
 		return m_pConfidentMask;
 	};
 private:
 	void gradientMeasureCompute(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, 
-		const FilterPatameter &filterPatameter, cv::Mat &srcImg);//ÌÝ¶ÈÖ¸±ê¼ÆËã
-	void gradientCircleSign(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &srcImg);//ÌÝ¶ÈÔ²mask±ê¼Ç
+		const FilterPatameter &filterPatameter, cv::Mat &srcImg);//ï¿½Ý¶ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½
 	void confidentMeasureMMN(cv::Mat *&costVol, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, 
-		const DisparityParameter &disparityParameter, cv::Mat &srcImg);//¸ù¾ÝMMNµÄÖÃÐÅ¶ÈÖ¸±ê¼ÆËã
-	void confidentMeasureMMN(cv::Mat *&costVol, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter,
-		const DisparityParameter &disparityParameter,
-		cv::Mat &confMeasureMat, int y, int x, cv::Mat &confidentMat2);
-	void setConfidentMask(cv::Mat &confidentMat, std::string confidentMaskName, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter);//ÉèÖÃÖÃÐÅ¶ÈµÄmask
+		const DisparityParameter &disparityParameter, cv::Mat &srcImg);//ï¿½ï¿½ï¿½ï¿½MMNï¿½ï¿½ï¿½ï¿½ï¿½Å¶ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½
+	void setConfidentMask(cv::Mat &confidentMat, std::string confidentMaskName, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å¶Èµï¿½mask
 	void confidentCircleJudge(cv::Mat &confidentMat, cv::Mat &mask, const RawImageParameter &rawImageParameter, 
 		const MicroImageParameter &microImageParameter);
 	bool confidentCircleJudge(cv::Mat &confidentMat, int y, int x, const RawImageParameter &rawImageParameter, 
@@ -52,11 +48,11 @@ private:
 	void lowTextureAreaPlot(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, 
 		const Mat &img_input, const Mat &mask, const string &picName, CircleDrawMode _circleDrawMode, bool _isOffset = false);
 	void drawCircle(Mat &img, const Point2d &centerPos, CircleDrawMode _circleDrawMode);
-	void confidentMaskRepair(cv::Mat &confidentMat, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter);//ÖÃÐÅ¶ÈÍ¼ÀûÓÃÌÝ¶ÈÔ²×öÐÞ¸´
+	void confidentMaskRepair(cv::Mat &confidentMat, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter);//ï¿½ï¿½ï¿½Å¶ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý¶ï¿½Ô²ï¿½ï¿½ï¿½Þ¸ï¿½
 	
-	string m_folderPath; //´æ´¢Â·¾¶
-	cv::Mat *m_pGradientCircleMask; //ÌÝ¶Èmask
-	cv::Mat *m_pConfidentMask; //ÖÃÐÅ¶Èmask
+	string m_folderPath; //ï¿½æ´¢Â·ï¿½ï¿½
+	cv::Mat *m_pGradientCircleMask; //ï¿½Ý¶ï¿½mask
+	cv::Mat *m_pConfidentMask; //ï¿½ï¿½ï¿½Å¶ï¿½mask
 };
 
 #endif

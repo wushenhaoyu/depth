@@ -7,7 +7,9 @@
 #include <opencv2/cudaarithm.hpp>
 #include <iostream>
 
+
 using namespace cv;
+using namespace cv::cuda;
 using namespace std;
 
 CostVolCompute::CostVolCompute() {

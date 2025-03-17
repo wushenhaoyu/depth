@@ -10,7 +10,7 @@
                 "-o",
                 "${workspaceFolder}/bin/main",
                 "${workspaceFolder}/main.cpp",
-                "${workspaceFolder}/ConfidenceCompute.cpp",
+                "${workspaceFolder}/ConfidenceCompute.cu",
                 "${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
                 "${workspaceFolder}/CostVolCompute.cu", // 修改为.cu
