@@ -116,10 +116,13 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	outfile << "confident measure compute use time: " << duration << " ms \n";
 	cv::Mat *pConfidentMask = confidenceCompute.getConfidentMask();
 	
-
+	start = std::chrono::high_resolution_clock::now();
 	SceneDepthCompute sceneDepthCompute;
 	sceneDepthCompute.outputMicrolensDisp(m_dataParameter, rawDisp, pConfidentMask);
-//	*/
+//	*/end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << 
+	"sence depth compute use time: " << duration << " ms" << std::endl;
 
 	ImageRander imageRander;
 	start = std::chrono::high_resolution_clock::now();
