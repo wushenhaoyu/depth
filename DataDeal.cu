@@ -48,38 +48,83 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
+__global__ void WTAMatchKernel(
+    const float* costVol,
+    uchar* disMap,
+    int width,
+    int height,
+    int maxDis
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    float minCost = FLT_MAX;
+    int minDis = 0;
+
+    for (int d = 1; d < maxDis; d++) {
+        int costIdx = (d - 1) * width * height + y * width + x;
+        float cost = costVol[costIdx];
+
+        if (cost * 1000000.0 < 0.01)
+            continue;
+
+        if (cost < minCost) {
+            if (cost <= 0.0001) {
+                minCost = -10;
+                minDis = 1;
+            } else {
+                minCost = cost;
+                minDis = d;
+            }
+        }
+    }
+
+    int disIdx = y * width + x;
+    disMap[disIdx] = minDis;
+}
+
+
 void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
 {//���Ӳ�dataCost�����еõ��Ӳ����ݣ���WTA�㷨
-	int width = disMap.cols;
-	int height = disMap.rows;
+int width = disMap.cols;
+    int height = disMap.rows;
 
-#pragma omp parallel for
-	for (int y = 0; y < height; y++) {
-		uchar* yDisData = (uchar*)disMap.ptr<uchar>(y);
-		for (int x = 0; x < width; x++) {
-			float minCost = FLT_MAX;
-			int    minDis = 0;
-			for (int d = 1; d < maxDis; d++) {
-				float* costData = (float*)costVol[d].ptr<float>(y);
-				//float costData_tmp = costData[x] * 1000000000000.0;//�˴����Թ��󣬷���cost=0
-				if (costData[x] * 1000000.0 < 0.01)
-					continue;
+    // 将 costVol 和 disMap 转换为连续的数组格式
+    int costVolSize = maxDis * width * height * sizeof(float);
+    int disMapSize = width * height * sizeof(uchar);
 
-				if (costData[x] < minCost) {//�޸�
-					if (costData[x] <= 0.0001){
-						minCost = -10;
-						minDis = 1;
-					}
-					else{
-						minCost = costData[x];
-						minDis = d;
-					}
-				}
-			}
-			yDisData[x] = minDis;
-		}
-	}
-	cout << "MatchTest over!" << endl;
+    float* d_costVol;
+    uchar* d_disMap;
+
+    // 分配设备内存
+    cudaMalloc(&d_costVol, costVolSize);
+    cudaMalloc(&d_disMap, disMapSize);
+
+    // 将数据从主机内存复制到设备内存
+    for (int d = 0; d < maxDis; d++) {
+        cudaMemcpy(d_costVol + d * width * height, costVol[d].data, width * height * sizeof(float), cudaMemcpyHostToDevice);
+    }
+    cudaMemset(d_disMap, 0, disMapSize);
+
+    // 计算线程块和网格大小
+    dim3 blockSize(16, 16);
+    dim3 gridSize((width + 15) / 16, (height + 15) / 16);
+
+    // 调用 CUDA 内核函数
+    WTAMatchKernel<<<gridSize, blockSize>>>(d_costVol, d_disMap, width, height, maxDis);
+    cudaDeviceSynchronize();
+
+    // 将结果从设备内存复制回主机内存
+    cudaMemcpy(disMap.data, d_disMap, disMapSize, cudaMemcpyDeviceToHost);
+
+    // 释放设备内存
+    cudaFree(d_costVol);
+    cudaFree(d_disMap);
+
+    cout << "MatchTest over!" << endl;
+
 }
 
 void DataDeal::dispMapShow(std::string dispImgName, const cv::Mat &disMap)
