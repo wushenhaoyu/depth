@@ -1,10 +1,10 @@
 /*!
  * \class 
  *
- * \brief 数据存储类，可以对视差数据或者datacost数据进行存储或者显示，便于后续扩充功能
+ * \brief 锟斤拷锟捷存储锟洁，锟斤拷锟皆讹拷锟接诧拷锟斤拷锟捷伙拷锟斤拷datacost锟斤拷锟捷斤拷锟叫存储锟斤拷锟斤拷锟斤拷示锟斤拷锟斤拷锟节猴拷锟斤拷锟斤拷锟戒功锟斤拷
  *
  * \author liuqian
- * \date 一月 2018
+ * \date 一锟斤拷 2018
  */
 
 #ifndef __DATADEAL_H_
@@ -18,13 +18,13 @@ public:
 	DataDeal();
 	~DataDeal();
 
-	void readDataCostFromXML(std::string dataCostFileName, cv::Mat *&costVol); //从xml文件中读取视差dataCost数据
-	void storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&costVol, int imgHeight, int imgWidth, int maxDis); //存储视差dataCost数据到xml文件中
-	void WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis); //从视差dataCost数据中得到视差数据，用WTA算法
-	void dispMapShow(std::string dispImgName, const cv::Mat &disMap); //显示并存储视差图像
-	void dispMapShowForColor(std::string dispImgName, const cv::Mat &disMap); //显示视差图，以彩色编码显示并存储
-	void readDispMapFromXML(std::string dispFileName, cv::Mat &disMap); //读取视差图信息
-	void storeDispMapToXML(std::string dispFileName, cv::Mat &disMap); //存储对应的视差状态信息
+	void readDataCostFromXML(std::string dataCostFileName, cv::Mat *&costVol); //锟斤拷xml锟侥硷拷锟叫讹拷取锟接诧拷dataCost锟斤拷锟斤拷
+	void storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&costVol, int imgHeight, int imgWidth, int maxDis); //锟芥储锟接诧拷dataCost锟斤拷锟捷碉拷xml锟侥硷拷锟斤拷
+	void WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis); //锟斤拷锟接诧拷dataCost锟斤拷锟斤拷锟叫得碉拷锟接诧拷锟斤拷锟捷ｏ拷锟斤拷WTA锟姐法
+	void dispMapShow(std::string dispImgName, const cv::Mat &disMap); //锟斤拷示锟斤拷锟芥储锟接诧拷图锟斤拷
+	void dispMapShowForColor(std::string dispImgName, const cv::Mat &disMap); //锟斤拷示锟接诧拷图锟斤拷锟皆诧拷色锟斤拷锟斤拷锟斤拷示锟斤拷锟芥储
+	void readDispMapFromXML(std::string dispFileName, cv::Mat &disMap); //锟斤拷取锟接诧拷图锟斤拷息
+	void storeDispMapToXML(std::string dispFileName, cv::Mat &disMap); //锟芥储锟斤拷应锟斤拷锟接诧拷状态锟斤拷息
 private:
 
 };

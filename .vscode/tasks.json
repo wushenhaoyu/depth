@@ -13,7 +13,7 @@
                 "${workspaceFolder}/ConfidenceCompute.cu",
                 "${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
-                "${workspaceFolder}/CostVolCompute.cu", // 修改为.cu
+                "${workspaceFolder}/CostVolCompute.cu",
                 "${workspaceFolder}/DataDeal.cu",
                 "${workspaceFolder}/DepthComputeToolOne.cpp",
                 "${workspaceFolder}/DepthComputeToolTwo.cpp",
@@ -42,12 +42,12 @@
                 "-lopencv_imgproc",
                 "-lopencv_cudaimgproc",
                 "-lopencv_cudafilters",
-                "-lopencv_cudaimgproc",  // CUDA图像处理模块
-                "-lopencv_cudafilters",  // CUDA滤波器模块
-                "-lopencv_cudaarithm", //加法
+                "-lopencv_cudaimgproc",
+                "-lopencv_cudafilters",
+                "-lopencv_cudaarithm",
                 "-lcudart",
                 "-lcublas",
-                "-lcudnn", // 如果使用cuDNN
+                "-lcudnn",
                 "-lGCoptimization"
             ],
             "options": {

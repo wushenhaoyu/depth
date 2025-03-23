@@ -142,6 +142,7 @@ void DataDeal::dispMapShowForColor(std::string dispImgName, const cv::Mat &disMa
 {//��ʾ�Ӳ�ͼ���Բ�ɫ������ʾ���洢
 	double minVal; double maxVal;
 	minMaxLoc(disMap, &minVal, &maxVal);
+	
 	cout << "min:" << minVal << "  max:" << maxVal;
 
 	Mat dispStore, falseColorsMap;

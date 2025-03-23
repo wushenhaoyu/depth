@@ -33,10 +33,16 @@ int main()
 		std::cout<<"No cuda!"<<std::endl;
 	}
 	// 记录开始时间
-	auto start = std::chrono::high_resolution_clock::now();
+	 
+		auto start = std::chrono::high_resolution_clock::now();
+		demo2();
+		auto end = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		std::cout << "程序运行时间: " << duration.count() << " 毫秒" << std::endl;
+		
+	
 
 	//demo1();
-	demo2();
 	// 读取灰度图像
 	
 	/*
@@ -86,11 +92,9 @@ int main()
 	*/
 
 	// 记录结束时间
-	auto end = std::chrono::high_resolution_clock::now();
+
 
 	// 计算时间差
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "程序运行时间: " << duration.count() << " 毫秒" << std::endl;
 	return 0;
 
 //注意，边缘检测因为只有左右没有上下，导致了对于有这明显上下分布的物体没法检测到边缘

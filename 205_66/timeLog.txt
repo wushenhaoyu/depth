@@ -1,2 +1,2 @@
-confident measure compute use time: 624 ms 
+confident measure compute use time: 427 ms 
 sub aperature rander use time: 0 seconds 

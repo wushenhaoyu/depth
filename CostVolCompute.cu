@@ -192,7 +192,7 @@ void CostVolCompute::costVolDataCompute(const DataParameter& dataParameter, Mat*
     cudaMemcpy(d_matchNeighborLens, microImageParameter.m_ppMatchNeighborLens[0], rawImageParameter.m_xLensNum * rawImageParameter.m_yLensNum * NEIGHBOR_MATCH_LENS_NUM * sizeof(MatchNeighborLens), cudaMemcpyHostToDevice);
 
     // 配置线程块和网格大小
-    dim3 blockSize(16, 16);
+    dim3 blockSize(64, 64);
     dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
     // 启动CUDA内核
