@@ -1,5 +1,5 @@
 #include "ImageRander.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 #include <iomanip>
 
 using namespace std;

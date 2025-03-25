@@ -1,4 +1,3 @@
-#include "ToolOneTestDemo.h"
 #include "ToolTwoTestDemo.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -7,20 +6,42 @@
 using namespace cv;
 using namespace std;
 
+#include <cuda_runtime.h>
 
+void printDeviceProperties(int devID) {
+    cudaDeviceProp deviceProps;
+    cudaError_t err;
 
+    // 获取设备属性
+    err = cudaGetDeviceProperties(&deviceProps, devID);
+    if (err != cudaSuccess) {
+        std::cerr << "Failed to get device properties: " << cudaGetErrorString(err) << std::endl;
+        return;
+    }
 
-void demo1()
-{
-	ToolOneTestDemo toolOneTestDemo;
-	toolOneTestDemo.data1compute();
+    // 打印设备属性
+    std::cout << "运行GPU设备: " << deviceProps.name << std::endl;
+    std::cout << "SM数量: " << deviceProps.multiProcessorCount << std::endl;
+    std::cout << "L2缓存大小: " << deviceProps.l2CacheSize / (1024 * 1024) << "M" << std::endl;
+    std::cout << "SM最大驻留线程数量: " << deviceProps.maxThreadsPerMultiProcessor << std::endl;
+    std::cout << "设备是否支持流优先级: " << (deviceProps.streamPrioritiesSupported ? "是" : "否") << std::endl;
+    std::cout << "设备是否支持在L1缓存中缓存全局内存: " << (deviceProps.globalL1CacheSupported ? "是" : "否") << std::endl;
+    std::cout << "设备是否支持在L1缓存中缓存本地内存: " << (deviceProps.localL1CacheSupported ? "是" : "否") << std::endl;
+    std::cout << "一个SM可用的最大共享内存量: " << deviceProps.sharedMemPerMultiprocessor / 1024 << "KB" << std::endl;
+    std::cout << "一个SM可用的32位最大寄存器数量: " << deviceProps.regsPerMultiprocessor / 1024 << "K" << std::endl;
+    std::cout << "一个SM最大驻留线程块数量: " << deviceProps.maxBlocksPerMultiProcessor << std::endl;
+    std::cout << "GPU内存带宽: " << deviceProps.memoryBusWidth << std::endl;
+    std::cout << "GPU内存频率: " << (float)deviceProps.memoryClockRate / (1024 * 1024) << "GHz" << std::endl;
 }
+
+
 
 void demo2()
 {
 	ToolTwoTestDemo toolTwoTestDemo;
 	toolTwoTestDemo.data5compute();
 }
+
 
 int main()
 {
@@ -32,6 +53,7 @@ int main()
 	else{
 		std::cout<<"No cuda!"<<std::endl;
 	}
+	printDeviceProperties(0);
 	// 记录开始时间
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -91,6 +113,7 @@ int main()
 	// 计算时间差
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	std::cout << "程序运行时间: " << duration.count() << " 毫秒" << std::endl;
+	cudaDeviceReset();
 	return 0;
 
 //注意，边缘检测因为只有左右没有上下，导致了对于有这明显上下分布的物体没法检测到边缘

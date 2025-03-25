@@ -1,7 +1,105 @@
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 using namespace cv;
 
 using namespace std;
+
+__constant__ RawImageParameter d_rawImageParameter;
+__constant__ DisparityParameter d_disparityParameter;
+__constant__ FilterParameterDevice d_filterPatameterDevice; 
+__device__ MicroImageParameterDevice d_microImageParameter; 
+
+void DataParameter::mapToGPU()
+{
+    // 将 RawImageParameter 映射到 GPU
+    cudaMemcpyToSymbol(d_rawImageParameter, &m_rawImageParameter, sizeof(RawImageParameter));
+
+    // 将 DisparityParameter 映射到 GPU
+    cudaMemcpyToSymbol(d_disparityParameter, &m_disparityParameter, sizeof(DisparityParameter));
+
+	int* d_validNeighborPixelsNum;
+    int* d_validPixelsMask;
+    float* d_filterKernel;
+
+    // 为每个成员分配内存并传输数据
+    cudaMalloc((void**)&d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int));
+    cudaMemcpy(d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->data, 
+               m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int), cudaMemcpyHostToDevice);
+
+    cudaMalloc((void**)&d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int));
+    cudaMemcpy(d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->data, 
+               m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int), cudaMemcpyHostToDevice);
+
+    cudaMalloc((void**)&d_filterKernel, m_filterPatameter.m_filterKnernel.total() * sizeof(float));
+    cudaMemcpy(d_filterKernel, m_filterPatameter.m_filterKnernel.data, 
+               m_filterPatameter.m_filterKnernel.total() * sizeof(float), cudaMemcpyHostToDevice);
+
+    // 2. 将这些指针传输到常量内存
+    FilterParameterDevice filterParamDevice = { d_validNeighborPixelsNum, d_validPixelsMask, d_filterKernel };
+    cudaMemcpyToSymbol(d_filterPatameterDevice, &filterParamDevice, sizeof(FilterParameterDevice));
+
+	int rows = m_rawImageParameter.m_yLensNum;
+    int cols = m_rawImageParameter.m_xLensNum;
+    int srcImgHeight = m_rawImageParameter.m_srcImgHeight;
+    int srcImgWidth = m_rawImageParameter.m_srcImgWidth;
+    int neighborNum = NEIGHBOR_MATCH_LENS_NUM;
+
+    // 1. 将标量参数传输到 GPU
+    cudaMemcpy(&d_microImageParameter.d_circleDiameter, &m_microImageParameter.m_circleDiameter, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_microImageParameter.d_circleNarrow, &m_microImageParameter.m_circleNarrow, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_microImageParameter.d_radiusDisEqu, &m_microImageParameter.m_radiusDisEqu, sizeof(float), cudaMemcpyHostToDevice);
+
+    // 2. 为 m_ppLensCenterPoints 展平数组分配内存
+    cv::Point2d* flatLensCenterPoints = new cv::Point2d[rows * cols];
+    int index = 0;
+    for (int y = m_rawImageParameter.m_yCenterBeginOffset; y < m_rawImageParameter.m_yLensNum - m_rawImageParameter.m_yCenterEndOffset; y++) {
+        for (int x = m_rawImageParameter.m_xCenterBeginOffset; x < m_rawImageParameter.m_xLensNum - m_rawImageParameter.m_xCenterEndOffset; x++) {
+            flatLensCenterPoints[index++] = m_microImageParameter.m_ppLensCenterPoints[y][x];
+        }
+    }
+    // 在 GPU 上为 m_ppLensCenterPoints 分配内存
+    cudaMalloc((void**)&d_microImageParameter.d_lensCenterPoints, sizeof(cv::Point2d) * rows * cols);
+    // 将数据传输到 GPU
+    cudaMemcpy(d_microImageParameter.d_lensCenterPoints, flatLensCenterPoints, sizeof(cv::Point2d) * rows * cols, cudaMemcpyHostToDevice);
+
+    // 3. 为 m_ppPixelsMappingSet 展平数组分配内存
+    int* flatPixelsMappingSet = new int[srcImgHeight * srcImgWidth];
+    index = 0;
+    for (int y = 0; y < srcImgHeight; y++) {
+        for (int x = 0; x < srcImgWidth; x++) {
+            flatPixelsMappingSet[index++] = m_microImageParameter.m_ppPixelsMappingSet[y][x];
+        }
+    }
+    // 在 GPU 上为 m_ppPixelsMappingSet 分配内存
+    cudaMalloc((void**)&d_microImageParameter.d_pixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth);
+    // 将数据传输到 GPU
+    cudaMemcpy(d_microImageParameter.d_pixelsMappingSet, flatPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth, cudaMemcpyHostToDevice);
+
+    // 4. 为 m_ppMatchNeighborLens 展平数组分配内存
+    MatchNeighborLens* flatMatchNeighborLens = new MatchNeighborLens[rows * cols * neighborNum];
+    index = 0;
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            for (int z = 0; z < neighborNum; z++) {
+                // 将 MatchNeighborLens 对象展平到 flatMatchNeighborLens 数组中
+                flatMatchNeighborLens[index++] = m_microImageParameter.m_ppMatchNeighborLens[y][x][z];
+            }
+        }
+    }
+    // 在 GPU 上为 m_ppMatchNeighborLens 分配内存
+    cudaMalloc((void**)&d_microImageParameter.d_matchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum);
+    // 将数据传输到 GPU
+    cudaMemcpy(d_microImageParameter.d_matchNeighborLens, flatMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum, cudaMemcpyHostToDevice);
+	// 将 m_inputImg 上传到 GPU
+	d_inputImg.upload(m_inputImg);
+
+	// 将 m_inputImgRec 上传到 GPU
+	d_inputImgRec.upload(m_inputImgRec);
+
+
+}
+
+	
+
 
 DataParameter::DataParameter()
 {
@@ -70,6 +168,7 @@ void DataParameter::init(std::string dataFolderName, std::string centerPointFile
 	generatePixelsMappingSet();
 	generateNeighborCenterPoints();
 	generateValidPoints();
+	mapToGPU();
 
 	std::cout << "DataParameter::init final!" << std::endl;
 }

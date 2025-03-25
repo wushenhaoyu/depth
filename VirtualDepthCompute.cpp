@@ -1,5 +1,5 @@
 #include "VirtualDepthCompute.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 #include <algorithm>
 
 #define BASE_LINE_DIS 34.0

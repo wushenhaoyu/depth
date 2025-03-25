@@ -1,5 +1,5 @@
 #include "ConfidenceCompute.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 
 using namespace std;
 using namespace cv;

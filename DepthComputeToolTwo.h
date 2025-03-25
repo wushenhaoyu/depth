@@ -1,17 +1,17 @@
 /*!
  * \class DepthComputeToolTwo
  *
- * \brief Éî¶È¹À¼ÆÄ£¿éµ÷ÓÃÊ¾Àý£¬¶ÔÓ¦·½·¨¶þ
+ * \brief ï¿½ï¿½È¹ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  *
  * \author liuqian
- * \date Ò»ÔÂ 2018
+ * \date Ò»ï¿½ï¿½ 2018
  */
 
 #ifndef __DEPTHCOMPUTETOOLTWO_H_
 #define __DEPTHCOMPUTETOOLTWO_H_
 
 #include "CommFunc.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 
 class DepthComputeToolTwo
 {

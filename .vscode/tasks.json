@@ -2,47 +2,53 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: g++ 编译 OpenCV 项目",
-            "command": "/usr/bin/g++",
+            "label": "C/C++: nvcc 编译 OpenCV + CUDA 项目",
+            "command": "/usr/local/cuda/bin/nvcc",
             "args": [
-                "-fdiagnostics-color=always",
-                "-g",
                 "-std=c++17",
-                "${workspaceFolder}/main.cpp",
-                "${workspaceFolder}/ConfidenceCompute.cpp",
-                "${workspaceFolder}/ToolOneTestDemo.cpp",
+                "-g",
+                "-o",
+                "${workspaceFolder}/bin/main",
+                "${workspaceFolder}/main.cu",
+                //"${workspaceFolder}/ConfidenceCompute.cpp",
+                //"${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
-                "${workspaceFolder}/CostVolCompute.cpp",
-                "${workspaceFolder}/DataDeal.cpp",
-                "${workspaceFolder}/DepthComputeToolOne.cpp",
-                "${workspaceFolder}/DepthComputeToolTwo.cpp",
-                //"${workspaceFolder}/DisparityRefinement.cpp",
+                "${workspaceFolder}/CostVolCompute.cpp", // 修改为.cpp
+                //"${workspaceFolder}/DataDeal.cpp",
+                //"${workspaceFolder}/DepthComputeToolOne.cpp",
+                "${workspaceFolder}/DepthComputeToolTwo.cu",
                 "${workspaceFolder}/GlobalOptimization.cpp",
-                "${workspaceFolder}/ImageRander.cpp",
-                "${workspaceFolder}/SceneDepthCompute.cpp",
-                "${workspaceFolder}/VirtualDepthCompute.cpp",
-                "${workspaceFolder}/CostVolFilter.cpp",
-                "${workspaceFolder}/DataParameter.cpp",
+                //"${workspaceFolder}/ImageRander.cu",
+                //"${workspaceFolder}/SceneDepthCompute.cpp",
+                //"${workspaceFolder}/VirtualDepthCompute.cpp",
+                "${workspaceFolder}/CostVolFilter.cu",
+                "${workspaceFolder}/DataParameter.cu",
                 "${workspaceFolder}/CAST/STCA.cpp",
                 "${workspaceFolder}/CAST/StereoDisparity.cpp",
                 "${workspaceFolder}/CAST/StereoHelper.cpp",
                 "${workspaceFolder}/CAST/SegmentTree.cpp",
                 "${workspaceFolder}/CAST/Toolkit.cpp",
                 "${workspaceFolder}/CAST/ctmf.o",
-                "-o",
-                "${workspaceFolder}/bin/main",
                 "-I/usr/local/include/opencv4",
-                "-I${workspaceFolder}/gcov3",  // GCO 头文件路径
+                "-I${workspaceFolder}/gcov3",
+                "-I${workspaceFolder}/CAST",
+                "-I/usr/local/cuda/include",
                 "-L/usr/local/lib",
+                "-L/usr/local/cuda/lib64",
+                "-L${workspaceFolder}/gcov3",
                 "-lopencv_core",
                 "-lopencv_imgcodecs",
                 "-lopencv_highgui",
                 "-lopencv_imgproc",
-                "-L${workspaceFolder}/gcov3",  // GCO 库路径
-                "-lGCoptimization",             // 链接 GCO
-                "-I${workspaceFolder}/CAST",
-
-
+                "-lopencv_cudaimgproc",
+                "-lopencv_cudafilters",
+                "-lopencv_cudaimgproc",  // CUDA图像处理模块
+                "-lopencv_cudafilters",  // CUDA滤波器模块
+                "-lopencv_cudaarithm", //加法
+                "-lcudart",
+                "-lcublas",
+                "-lcudnn", // 如果使用cuDNN
+                "-lGCoptimization"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -54,7 +60,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "OpenCV 项目编译任务"
+            "detail": "OpenCV + CUDA 项目编译任务"
         }
     ],
     "version": "2.0.0"

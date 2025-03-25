@@ -241,7 +241,8 @@ void ToolTwoTestDemo::data5compute()//主要函数
 	
 	
 
-	string folderName = "/home/jetson/Desktop/light/205_66";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
+	string folderName = "/home/jetson/Desktop/depth/205_66";//锟斤拷锟斤拷屑锟斤拷锟斤拷锟斤拷募锟斤拷锟�
+	
 	string inputRawImg = "66_5.bmp";
 	string centerPointFile = "points.txt";
 
