@@ -1,5 +1,5 @@
 #include "DataDeal.h"
-
+#include "DataParameter.cuh"
 using namespace std;
 using namespace cv;
 
@@ -48,38 +48,70 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
+extern __device__ float* d_costVol;
+extern __device__ float* d_rawDisp;
+extern __constant__ DisparityParameter d_disparityParameter;
+extern __constant__ RawImageParameter d_rawImageParameter;
+
+__global__ void wtamatchKernel()
+{
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int height = d_rawImageParameter.m_recImgHeight;
+	int width = d_rawImageParameter.m_recImgWidth;
+    // 确保线程在图像范围内
+    if (y < height && x < width)
+    {
+        float minCost = FLT_MAX;
+        int minDis = 0;
+
+        for (int d = 1; d < d_disparityParameter.m_dispMax; d++) {
+            // 计算该视差下的代价值
+            float* costData = &d_costVol[d * height * width + y * width + x];
+
+            // 若代价过小则跳过
+            if (*costData * 1000000.0f < 0.01f) {
+                continue;
+            }
+
+            // 找到最小代价
+            if (*costData < minCost) {
+                if (*costData <= 0.0001f) {
+                    minCost = -10.0f;
+                    minDis = 1;
+                } else {
+                    minCost = *costData;
+                    minDis = d;
+                }
+            }
+        }
+
+        // 将最小视差值存储到结果中
+        d_rawDisp[y * width + x] = minDis;
+    }
+}
+
+
 void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
-{//���Ӳ�dataCost�����еõ��Ӳ����ݣ���WTA�㷨
-	int width = disMap.cols;
-	int height = disMap.rows;
+{
+    int width = disMap.cols;
+    int height = disMap.rows;
 
-#pragma omp parallel for
-	for (int y = 0; y < height; y++) {
-		uchar* yDisData = (uchar*)disMap.ptr<uchar>(y);
-		for (int x = 0; x < width; x++) {
-			float minCost = FLT_MAX;
-			int    minDis = 0;
-			for (int d = 1; d < maxDis; d++) {
-				float* costData = (float*)costVol[d].ptr<float>(y);
-				//float costData_tmp = costData[x] * 1000000000000.0;//�˴����Թ��󣬷���cost=0
-				if (costData[x] * 1000000.0 < 0.01)
-					continue;
+    // 分配线程块和网格
+    dim3 blockSize(32, 32);  // 例如每个块16x16个线程
+    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
-				if (costData[x] < minCost) {//�޸�
-					if (costData[x] <= 0.0001){
-						minCost = -10;
-						minDis = 1;
-					}
-					else{
-						minCost = costData[x];
-						minDis = d;
-					}
-				}
-			}
-			yDisData[x] = minDis;
-		}
-	}
-	cout << "MatchTest over!" << endl;
+    // 调用核函数
+    wtamatchKernel<<<gridSize, blockSize>>>();
+
+    // 检查是否有 CUDA 错误
+    cudaDeviceSynchronize();
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("CUDA error: %s\n", cudaGetErrorString(err));
+    }
+
+    cout << "MatchTest over!" << endl;
 }
 
 void DataDeal::dispMapShow(std::string dispImgName, const cv::Mat &disMap)

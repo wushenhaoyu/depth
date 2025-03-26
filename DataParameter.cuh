@@ -90,13 +90,13 @@ struct FilterParameterDevice {
 };
 
 struct MicroImageParameterDevice {
-    float d_circleDiameter;   // 圆形直径
-    float d_circleNarrow;     // 圆形狭窄
-    float d_radiusDisEqu;     // 圆形半径差异
+    float m_circleDiameter;   // 圆形直径
+    float m_circleNarrow;     // 圆形狭窄
+    float m_radiusDisEqu;     // 圆形半径差异
 
-    cv::Point2d* d_lensCenterPoints;  // 存储在 GPU 上的 Lens Center Points
-    int* d_pixelsMappingSet;           // 存储在 GPU 上的 Pixels Mapping Set
-    MatchNeighborLens* d_matchNeighborLens;  // 存储在 GPU 上的 Match Neighbor Lens
+    cv::Point2d* m_ppLensCenterPoints;  // 存储在 GPU 上的 Lens Center Points
+    int* m_ppPixelsMappingSet;           // 存储在 GPU 上的 Pixels Mapping Set
+    MatchNeighborLens* m_ppMatchNeighborLens;  // 存储在 GPU 上的 Match Neighbor Lens
 };
 
 
@@ -117,6 +117,7 @@ public:
 	void dispSet(int dispMin = 5, int dispMax = 13, float dispStep = 0.5);
 	void srcImageSet(std::string dataFolderPath, std::string inputImgName);
 	void mapToGPU();
+	void UpdateImgToGPU();
 
 	RawImageParameter getRawImageParameter() const
 	{
@@ -138,8 +139,6 @@ public:
 	//ͼ����Ϣ
 	cv::Mat m_inputImg; //�����Rawͼ��
 	cv::Mat m_inputImgRec; //�������Rawͼ���ͼ����
-	cv::cuda::GpuMat d_inputImg; //�����Rawͼ��
-	cv::cuda::GpuMat d_inputImgRec; //�������Rawͼ���ͼ����
 	std::string m_folderPath; //�������ݴ���ļ�����
 	//������Ҫ�����õ����ŵ����в��ּ���Ч��
 private:

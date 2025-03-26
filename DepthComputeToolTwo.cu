@@ -9,7 +9,7 @@
 #include "ImageRander.h"
 #include <time.h>
 
-__device__ float* d_costVol;
+
 
 DepthComputeToolTwo::DepthComputeToolTwo()
 {
@@ -43,24 +43,9 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
 		costVol[mIdx] = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
 	}
-	cudaMalloc((void**)&d_costVol, disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth * sizeof(float));
-    cudaMemset(d_costVol, 0, disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth * sizeof(float));
-	/*cv::cuda::GpuMat* costVol = new cv::cuda::GpuMat[disparityParameter.m_disNum];
-    for (int mIdx = 0; mIdx < disparityParameter.m_disNum; mIdx++) {
-        costVol[mIdx] = cv::cuda::GpuMat(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_32FC1);
-        costVol[mIdx].setTo(cv::Scalar(0));  // 鍦� GPU 涓婂垵濮嬪寲涓洪浂
-    }*/
 	fstream outfile(m_dataParameter.m_folderPath + "/timeLog.txt", ios::out);
 
-	/*
-	CostVolCompute costVolCompute;
-	t1 = clock();
-	costVolCompute.costVolDataCompute(m_dataParameter, costVol);
-	t2 = clock();
-	std::cout << "init raw cost vol compute use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
-	*/
-
-	//DataDeal dataDeal;
+	DataDeal dataDeal;
 	std::string  storeName;
 	cv::Mat rawDisp = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
 	/*设为固定值，取消计算*/
@@ -69,7 +54,8 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 			rawDisp.at<uchar>(i, j) = 15;
 		}
 	}
-	//dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);//锟斤拷锟斤拷
+
+	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);//锟斤拷锟斤拷
 	storeName = m_dataParameter.m_folderPath + "/dispBeforeFilter.png";
 	//dataDeal.dispMapShow(storeName, rawDisp);//锟斤拷锟斤拷
 	std::cout << "disp before filter final!" << std::endl;
@@ -129,7 +115,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	sceneDepthCompute.outputMicrolensDisp(m_dataParameter, rawDisp, pConfidentMask);
 	*/
 
-	/*ImageRander imageRander;
+	ImageRander imageRander;
 	start = std::chrono::high_resolution_clock::now();
 //	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
 	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
@@ -138,7 +124,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	std::cout << "sub aperature rander use time: " << duration  << " ms " << std::endl;
 	outfile << "sub aperature rander use time: " << duration / CLOCKS_PER_SEC << " seconds \n";
 	
-	outfile.close();*/
+	outfile.close();
 	delete[]costVol;
 }
 

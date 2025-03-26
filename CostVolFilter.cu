@@ -136,11 +136,11 @@ __global__ void costVolWindowFilterKernel()
     __syncthreads();  // 确保数据加载完毕
 
     // 获取当前中心点位置
-    Point2d curCenterPos = d_microImageParameter.d_lensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
-    int xBegin = curCenterPos.x - d_microImageParameter.d_circleDiameter / 2 + d_microImageParameter.d_circleNarrow;
-    int yBegin = curCenterPos.y - d_microImageParameter.d_circleDiameter / 2 + d_microImageParameter.d_circleNarrow;
-    int xEnd = curCenterPos.x + d_microImageParameter.d_circleDiameter / 2 - d_microImageParameter.d_circleNarrow;
-    int yEnd = curCenterPos.y + d_microImageParameter.d_circleDiameter / 2 - d_microImageParameter.d_circleNarrow;
+    Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
+    int xBegin = curCenterPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
+    int yBegin = curCenterPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
+    int xEnd = curCenterPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
+    int yEnd = curCenterPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
 
     // 获取掩膜值
     int maskWidth = xEnd - xBegin + 1;

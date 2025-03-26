@@ -14,11 +14,11 @@
                 //"${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
                 "${workspaceFolder}/CostVolCompute.cpp", // 修改为.cpp
-                //"${workspaceFolder}/DataDeal.cpp",
+                "${workspaceFolder}/DataDeal.cu",
                 //"${workspaceFolder}/DepthComputeToolOne.cpp",
                 "${workspaceFolder}/DepthComputeToolTwo.cu",
                 "${workspaceFolder}/GlobalOptimization.cpp",
-                //"${workspaceFolder}/ImageRander.cu",
+                "${workspaceFolder}/ImageRander.cu",
                 //"${workspaceFolder}/SceneDepthCompute.cpp",
                 //"${workspaceFolder}/VirtualDepthCompute.cpp",
                 "${workspaceFolder}/CostVolFilter.cu",

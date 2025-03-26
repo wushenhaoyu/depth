@@ -7,7 +7,12 @@ __constant__ RawImageParameter d_rawImageParameter;
 __constant__ DisparityParameter d_disparityParameter;
 __constant__ FilterParameterDevice d_filterPatameterDevice; 
 __device__ MicroImageParameterDevice d_microImageParameter; 
-
+__device__ float* d_costVol;
+__device__ float* d_rawDisp;
+__device__ float* d_ppLensMeanDisp;
+__device__ float* d_renderCache;
+__device__ float* d_inputImg;
+__device__ float* d_inputImgRec;
 void DataParameter::mapToGPU()
 {
     // 将 RawImageParameter 映射到 GPU
@@ -44,9 +49,9 @@ void DataParameter::mapToGPU()
     int neighborNum = NEIGHBOR_MATCH_LENS_NUM;
 
     // 1. 将标量参数传输到 GPU
-    cudaMemcpy(&d_microImageParameter.d_circleDiameter, &m_microImageParameter.m_circleDiameter, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(&d_microImageParameter.d_circleNarrow, &m_microImageParameter.m_circleNarrow, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(&d_microImageParameter.d_radiusDisEqu, &m_microImageParameter.m_radiusDisEqu, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_microImageParameter.m_circleDiameter, &m_microImageParameter.m_circleDiameter, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_microImageParameter.m_circleNarrow, &m_microImageParameter.m_circleNarrow, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_microImageParameter.m_radiusDisEqu, &m_microImageParameter.m_radiusDisEqu, sizeof(float), cudaMemcpyHostToDevice);
 
     // 2. 为 m_ppLensCenterPoints 展平数组分配内存
     cv::Point2d* flatLensCenterPoints = new cv::Point2d[rows * cols];
@@ -57,9 +62,9 @@ void DataParameter::mapToGPU()
         }
     }
     // 在 GPU 上为 m_ppLensCenterPoints 分配内存
-    cudaMalloc((void**)&d_microImageParameter.d_lensCenterPoints, sizeof(cv::Point2d) * rows * cols);
+    cudaMalloc((void**)&d_microImageParameter.m_ppLensCenterPoints, sizeof(cv::Point2d) * rows * cols);
     // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.d_lensCenterPoints, flatLensCenterPoints, sizeof(cv::Point2d) * rows * cols, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_microImageParameter.m_ppLensCenterPoints, flatLensCenterPoints, sizeof(cv::Point2d) * rows * cols, cudaMemcpyHostToDevice);
 
     // 3. 为 m_ppPixelsMappingSet 展平数组分配内存
     int* flatPixelsMappingSet = new int[srcImgHeight * srcImgWidth];
@@ -70,9 +75,9 @@ void DataParameter::mapToGPU()
         }
     }
     // 在 GPU 上为 m_ppPixelsMappingSet 分配内存
-    cudaMalloc((void**)&d_microImageParameter.d_pixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth);
+    cudaMalloc((void**)&d_microImageParameter.m_ppPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth);
     // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.d_pixelsMappingSet, flatPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_microImageParameter.m_ppPixelsMappingSet, flatPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth, cudaMemcpyHostToDevice);
 
     // 4. 为 m_ppMatchNeighborLens 展平数组分配内存
     MatchNeighborLens* flatMatchNeighborLens = new MatchNeighborLens[rows * cols * neighborNum];
@@ -86,18 +91,27 @@ void DataParameter::mapToGPU()
         }
     }
     // 在 GPU 上为 m_ppMatchNeighborLens 分配内存
-    cudaMalloc((void**)&d_microImageParameter.d_matchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum);
+    cudaMalloc((void**)&d_microImageParameter.m_ppMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum);
     // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.d_matchNeighborLens, flatMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum, cudaMemcpyHostToDevice);
-	// 将 m_inputImg 上传到 GPU
-	d_inputImg.upload(m_inputImg);
+    cudaMemcpy(d_microImageParameter.m_ppMatchNeighborLens, flatMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum, cudaMemcpyHostToDevice);
 
-	// 将 m_inputImgRec 上传到 GPU
-	d_inputImgRec.upload(m_inputImgRec);
-
-
+	cudaMalloc((void**)&d_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
+    cudaMemset(d_costVol, 0, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
+	cudaMalloc((void**)&d_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
+    
+    // 初始化为固定值 15 (使用 cudaMemset 来初始化设备内存)
+    cudaMemset(d_rawDisp, 15, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
+	
+	cudaMalloc(&d_ppLensMeanDisp, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(float));
 }
 
+void DataParameter::UpdateImgToGPU()
+{
+	size_t inputImgSize = m_inputImg.total() * m_inputImg.elemSize();      // 计算图像的字节大小
+	size_t inputImgRecSize = m_inputImgRec.total() * m_inputImgRec.elemSize();  // 计算图像的字节大小
+	cudaMalloc((void**)&d_inputImg, inputImgSize * sizeof(float));      // 为输入图像分配内存
+	cudaMalloc((void**)&d_inputImgRec, inputImgRecSize * sizeof(float));  // 为裁剪后的图像分配内存
+}
 	
 
 
@@ -249,6 +263,8 @@ void DataParameter::imageBaseMessageInit(std::string inputImgName, int filterRad
 
 	m_inputImgRec = m_inputImg(cv::Rect(m_rawImageParameter.m_xPixelBeginOffset, m_rawImageParameter.m_yPixelBeginOffset, 
 		m_rawImageParameter.m_recImgWidth, m_rawImageParameter.m_recImgHeight)).clone();
+
+	UpdateImgToGPU();
 
 	std::string recImageStore = m_folderPath + "/" + "srcImgRec.png";
 	imwrite(recImageStore, m_inputImgRec);
