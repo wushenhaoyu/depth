@@ -253,7 +253,10 @@ void ToolTwoTestDemo::data5compute()//主要函数
 
 	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
+
 	depthComputeToolTwo.rawImageDisparityCompute();
+
+
 
 	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else
@@ -344,7 +347,10 @@ void ToolTwoTestDemo::data7compute()
 
 	//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Raw图锟斤拷锟接差及锟斤拷锟脚讹拷mask锟斤拷锟姐，注锟斤拷锟叫伙拷锟疥定锟藉，注锟酵碉拷SCENE_DEPTH_COMPUTE锟侥讹拷锟藉即锟斤拷
 #ifndef SCENE_DEPTH_COMPUTE
+
 	depthComputeToolTwo.rawImageDisparityCompute();
+
+
 
 	//锟斤拷锟侥诧拷锟斤拷锟斤拷锟斤拷Matlab锟斤拷锟斤拷锟斤拷锟斤拷涌拙锟酵硷拷锟斤拷锟斤拷染锟斤拷然锟斤拷锟接孔撅拷图锟斤拷锟接筹拷锟斤拷募锟斤拷锟斤拷诘锟角澳柯硷拷锟�
 #else

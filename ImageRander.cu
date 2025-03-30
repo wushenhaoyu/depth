@@ -329,90 +329,65 @@ __global__ void computeBoundaryKernel(RanderMapPatch *d_ppRanderMapPatch,
 
 __global__ void processPatchKernel(RanderMapPatch* d_ppRanderMapPatch,
     float *d_randerImg,
-    int patchWidth, int patchHeight, int channels
-) 
+    int patchWidth, int patchHeight) 
 {
-    extern __shared__ float sharedMem[];
+int x = blockIdx.x * blockDim.x + threadIdx.x;
+int y = blockIdx.y * blockDim.y + threadIdx.y;
+int c = threadIdx.z;  // 处理的颜色通道 (0, 1, 2)
 
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+// Adjust the range to match the CPU code
+int xAdjusted = x + d_rawImageParameter.m_xCenterBeginOffset;
+int yAdjusted = y + d_rawImageParameter.m_yCenterBeginOffset;
 
-    // Adjust the range to match the CPU code
-    int xAdjusted = x + d_rawImageParameter.m_xCenterBeginOffset;
-    int yAdjusted = y + d_rawImageParameter.m_yCenterBeginOffset;
+if (xAdjusted >= d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset ||
+yAdjusted >= d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset) {
+return;
+}
 
-    // Check if the adjusted indices are within the valid range
-    if (xAdjusted < d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset &&
-        yAdjusted < d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset)
-    {
-        Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted];
-        int blockSize = fabsf(roundf(d_ppLensMeanDisp[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted]));
-        int starty = curCenterPos.y - blockSize / 2 - d_rawImageParameter.m_yPixelBeginOffset;
-        int startx = curCenterPos.x - blockSize / 2 - d_rawImageParameter.m_xPixelBeginOffset;
-        startx = max(startx, 0);
-        starty = max(starty, 0);
+Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted];
+int blockSize = fabsf(roundf(d_ppLensMeanDisp[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted]));
+int starty = max(static_cast<int>(curCenterPos.y - blockSize / 2 - d_rawImageParameter.m_yPixelBeginOffset), 0);
+int startx = max(static_cast<int>(curCenterPos.x - blockSize / 2 - d_rawImageParameter.m_xPixelBeginOffset), 0);
 
-        float *d_srcImg = d_randerImg + (starty * d_rawImageParameter.m_xLensNum + startx) * channels;
-        float *d_simg = d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].simg;
 
-        // Load data into shared memory
-        int tx = threadIdx.x;
-        int ty = threadIdx.y;
-        int sharedIdx = ty * blockDim.x + tx;
+float *d_srcImg = d_randerImg + (starty * d_rawImageParameter.m_xLensNum + startx) * 3;
+float *d_simg = d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].simg;
 
-        for (int c = 0; c < channels; ++c) {
-            sharedMem[sharedIdx * channels + c] = d_srcImg[(ty * blockDim.x + tx) * channels + c];
-        }
-        __syncthreads();
+// 计算当前线程处理的 Patch 位置
+int i = threadIdx.x;
+int j = threadIdx.y;
 
-        // Perform bilinear interpolation
-        for (int j = 0; j < patchHeight; ++j)
-        {
-            for (int i = 0; i < patchWidth; ++i)
-            {
-                float fx = (float)i / (patchWidth - 1) * (blockSize - 1);
-                float fy = (float)j / (patchHeight - 1) * (blockSize - 1);
+if (i < patchWidth && j < patchHeight) {
+// 计算双线性插值
+float fx = (float)i / (patchWidth - 1) * (blockSize - 1);
+float fy = (float)j / (patchHeight - 1) * (blockSize - 1);
+int ix = (int)fx;
+int iy = (int)fy;
+float wx = fx - ix;
+float wy = fy - iy;
 
-                int ix = (int)fx;
-                int iy = (int)fy;
+float top_left = d_srcImg[(iy * blockSize + ix) * 3 + c];
+float top_right = d_srcImg[(iy * blockSize + ix + 1) * 3 + c];
+float bottom_left = d_srcImg[((iy + 1) * blockSize + ix) * 3 + c];
+float bottom_right = d_srcImg[((iy + 1) * blockSize + ix + 1) * 3 + c];
 
-                // Perform bilinear interpolation using shared memory
-                float wx = fx - ix;
-                float wy = fy - iy;
+float interpolated = (1 - wx) * (1 - wy) * top_left +
+wx * (1 - wy) * top_right +
+(1 - wx) * wy * bottom_left +
+wx * wy * bottom_right;
 
-                for (int c = 0; c < channels; ++c)
-                {
-                    float top_left = sharedMem[(iy * blockDim.x + ix) * channels + c];
-                    float top_right = sharedMem[(iy * blockDim.x + ix + 1) * channels + c];
-                    float bottom_left = sharedMem[((iy + 1) * blockDim.x + ix) * channels + c];
-                    float bottom_right = sharedMem[((iy + 1) * blockDim.x + ix + 1) * channels + c];
+d_simg[(j * patchWidth + i) * 3 + c] = interpolated;
 
-                    float interpolated = (1 - wx) * (1 - wy) * top_left +
-                                         wx * (1 - wy) * top_right +
-                                         (1 - wx) * wy * bottom_left +
-                                         wx * wy * bottom_right;
-                    d_simg[(j * patchWidth + i) * channels + c] = interpolated;
-                }
-            }
-        }
+// 镜像翻转 Patch
+d_simg[(j * patchWidth + (patchWidth - 1 - i)) * 3 + c] = interpolated;
 
-        // Mirror the patch
-        for (int j = 0; j < patchHeight; ++j)
-        {
-            for (int i = 0; i < patchWidth; ++i)
-            {
-                for (int c = 0; c < channels; ++c)
-                {
-                    d_simg[(j * patchWidth + i) * channels + c] = d_simg[(j * patchWidth + (patchWidth - 1 - i)) * channels + c];
-                }
-            }
-        }
-
-        // Store the processed patch information in RanderMapPatch
-        int patchIdx = yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted;  // Flattened index 
-        d_ppRanderMapPatch[patchIdx].sy = curCenterPos.y;
-        d_ppRanderMapPatch[patchIdx].sx = curCenterPos.x;
-    }
+// 存储 Patch 位置
+if (c == 0 && i == 0 && j == 0) {
+int patchIdx = yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted;
+d_ppRanderMapPatch[patchIdx].sy = curCenterPos.y;
+d_ppRanderMapPatch[patchIdx].sx = curCenterPos.x;
+}
+}
 }
 
 
@@ -428,11 +403,11 @@ void ImageRander::imageRander(const RawImageParameter &rawImageParameter,
 
     // Step 1: Process patch kernel
     cudaEventRecord(start); 
-    dim3 blockSize(32, 32);
-    dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x, (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
+    dim3 blockSize(16, 16, 3);  // (Patch 16x16, 每个线程负责一个像素，3 个通道)
+    dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x, 
+                  (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
     
-    int sharedMemSize = blockSize.x * blockSize.y * 3 * sizeof(float);
-    processPatchKernel<<<gridSize, blockSize, sharedMemSize>>>(d_ppRanderMapPatch, d_randerImg, DEST_WIDTH, DEST_HEIGHT, 3);
+    processPatchKernel<<<gridSize, blockSize>>>(d_ppRanderMapPatch, d_randerImg, DEST_WIDTH, DEST_HEIGHT);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
     cudaEventRecord(stop); 
@@ -445,6 +420,8 @@ void ImageRander::imageRander(const RawImageParameter &rawImageParameter,
 
     // Step 2: Compute boundary kernel
     cudaEventRecord(start); 
+    blockSize = dim3(32, 32);
+    gridSize = dim3((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x, (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
     computeBoundaryKernel<<<gridSize, blockSize>>>(d_ppRanderMapPatch,  DEST_WIDTH, DEST_HEIGHT);
     CUDA_CHECK(cudaGetLastError()); 
     CUDA_CHECK(cudaDeviceSynchronize());
