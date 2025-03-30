@@ -6,12 +6,6 @@ using namespace std;
 using namespace cv;
 
 
-//修改了WIDTH和HEIGHT,此处参数只能影响到渲染图的生成效果
-#define MEAN_DISP_LEN_RADIUS 18//平均距离长度 8 注意该参数在需要让计算深度的点尽量都在一个圆内(方型)  10
-#define PATCH_SCALE9 9//路径比例 9
-#define RANDER_SCALE 0.9//渲染比例 render  0.35
-#define DEST_WIDTH 44//38 27 44
-#define DEST_HEIGHT 44//38 27 44
 
 ImageRander::ImageRander()
 {
@@ -23,7 +17,7 @@ ImageRander::~ImageRander()
 
 }
 
-void ImageRander::imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask)
+/*void ImageRander::imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask)
 {//对带置信度mask的情况进行子孔径渲染
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
@@ -93,33 +87,13 @@ void ImageRander::imageRanderWithMask(const DataParameter &dataParameter, cv::Ma
 
 	double minVal, maxVal;
 	minMaxLoc(randerSparseDispMap, &minVal, &maxVal);
-//#pragma omp parallel for
-	for (int py = 0; py < randerSparseDispMap.rows; py++)
-	{
-		double *ySparseData = (double *)randerSparseDispMap.ptr<double>(py);
-		uchar *yConfMask = (uchar *)finalRanderMask.ptr<uchar>(py);
-		for (int px = 0; px < randerSparseDispMap.cols; px++)
-		{
-			if (yConfMask[px] == 0)
-				ySparseData[px] = minVal;
-		}
-	}
-	storeName = dataParameter.m_folderPath + "/randerSparseDispMap.bmp";
-	dispMapShowForColor(storeName, randerSparseDispMap);
-//  */
+
 	for (int i = 0; i < rawImageParameter.m_yLensNum; i++)
 		delete[]ppLensMeanDisp[i];
 	delete[]ppLensMeanDisp;
-}
+}*/
 
-extern __constant__ RawImageParameter d_rawImageParameter;
-extern __constant__ DisparityParameter d_disparityParameter;
-extern __constant__ FilterParameterDevice d_filterPatameterDevice; 
-extern __device__ MicroImageParameterDevice d_microImageParameter; 
-extern __device__ float* d_costVol;
-extern __device__ float* d_rawDisp;
-extern __device__ float* d_ppLensMeanDisp;
-
+__device__ float *d_randerMap, *d_randerCount;
 __global__ void computeLensMeanDispKernel()
 {
     // 获取当前线程的坐标
@@ -132,50 +106,35 @@ __global__ void computeLensMeanDispKernel()
     {
         // 计算当前中心点坐标
         Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
-        int x_begin = curCenterPos.x - d_rawImageParameter.m_xPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
-        int y_begin = curCenterPos.y - d_rawImageParameter.m_yPixelBeginOffset - MEAN_DISP_LEN_RADIUS;
-        
-        // 设置共享内存
-        extern __shared__ float sharedMem[];
+        int x_begin = curCenterPos.x - d_rawImageParameter.m_xPixelBeginOffset - d_meanDispLenRadius;
+        int y_begin = curCenterPos.y - d_rawImageParameter.m_yPixelBeginOffset - d_meanDispLenRadius;
 
-        // 计算共享内存的宽度和高度
-        int rectWidth = MEAN_DISP_LEN_RADIUS * 2 + 1;
-        int rectHeight = MEAN_DISP_LEN_RADIUS * 2 + 1;
-
-        // 将区域数据加载到共享内存
-        int tx = threadIdx.x;
-        int ty = threadIdx.y;
-        int sharedIndex = ty * rectWidth + tx;
-
-        // 加载共享内存的每个元素
-        if (x_begin + tx >= 0 && x_begin + tx < d_rawImageParameter.m_recImgWidth &&
-            y_begin + ty >= 0 && y_begin + ty < d_rawImageParameter.m_recImgHeight)
-        {
-            sharedMem[sharedIndex] = d_rawDisp[(y_begin + ty) * d_rawImageParameter.m_recImgWidth + (x_begin + tx)];
-        }
-        else
-        {
-            sharedMem[sharedIndex] = 0.0f;  // 边界外的数据填充为0
-        }
-
-        // 确保所有线程都完成数据加载
-        __syncthreads();
+        // 计算区域的宽度和高度
+        int rectWidth = d_meanDispLenRadius * 2 + 1;
+        int rectHeight = d_meanDispLenRadius * 2 + 1;
 
         // 计算该区域的均值
         float sum = 0.0f;
         int count = 0;
 
-        // 计算共享内存中的区域均值
         for (int dy = 0; dy < rectHeight; dy++) {
             for (int dx = 0; dx < rectWidth; dx++) {
-                int sharedIndex = (dy * rectWidth) + dx;
-                sum += sharedMem[sharedIndex];
-                count++;
+                int globalX = x_begin + dx;
+                int globalY = y_begin + dy;
+
+                // 确保访问的坐标在有效范围内
+                if (globalX >= 0 && globalX < d_rawImageParameter.m_recImgWidth &&
+                    globalY >= 0 && globalY < d_rawImageParameter.m_recImgHeight)
+                {
+                    sum += d_rawDisp[globalY * d_rawImageParameter.m_recImgWidth + globalX];
+                    count++;
+                }
             }
         }
 
         float meanDisp = sum / count;
         d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x] = fmax(meanDisp, (float)d_disparityParameter.m_dispMin);
+         //printf("x: %d, y: %d, meanDisp: %f\n", x, y, d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x]);
     }
 }
 
@@ -194,17 +153,14 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv:
     computeLensMeanDispKernel<<<gridSize, blockSize>>>();
 
     // Check for any errors during kernel launch
-    cudaDeviceSynchronize();
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA error in kernel launch: " << cudaGetErrorString(err) << std::endl;
-    }
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
 
-	cv::Mat randerMapinput, randerSceneMap, finalRanderMap;
-	dataParameter.m_inputImgRec.convertTo(randerMapinput, CV_64FC3);
-	imageRander(nullptr, rawImageParameter, microImageParameter, randerMapinput, randerSceneMap);
-	std::string storeName = dataParameter.m_folderPath + "/randerSceneMap.bmp";
-	randerSceneMap.convertTo(finalRanderMap, CV_8UC3);
+	//cv::Mat randerMapinput, randerSceneMap, finalRanderMap;
+	//dataParameter.m_inputImgRec.convertTo(randerMapinput, CV_64FC3);
+	imageRander(rawImageParameter, microImageParameter, d_inputImgRec);
+	//std::string storeName = dataParameter.m_folderPath + "/randerSceneMap.bmp";
+	//randerSceneMap.convertTo(finalRanderMap, CV_8UC3);
 	//imwrite(storeName, finalRanderMap);
 }
 
@@ -280,30 +236,28 @@ void flipCUDA(float *d_src, float *d_dst, int width, int height, int channels)
 
 
 __global__ void accumulateKernel(
-    float *d_randerMap, 
-    float *d_randerCount, 
     RanderMapPatch *d_randerMapPatch, // 使用单一一级指针
-    int m_xLensNum, 
-    int m_yLensNum, 
     int DEST_WIDTH_, 
     int DEST_HEIGHT_, 
-    int randerMapWidth, 
-    int randerMapHeight, 
     int channels)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < m_xLensNum && y < m_yLensNum)
+    // 获取 randerMapWidth 和 randerMapHeight 通过解引用指针
+    int randerMapWidthVal = d_randerMapWidth[0];
+    int randerMapHeightVal = d_randerMapHeight[0];
+
+    if (x < d_rawImageParameter.m_xLensNum && y < d_rawImageParameter.m_yLensNum)
     {
         // 使用线性索引来访问 RanderMapPatch
-        RanderMapPatch patch = d_randerMapPatch[y * m_xLensNum + x];
+        RanderMapPatch patch = d_randerMapPatch[y * d_rawImageParameter.m_xLensNum + x];
 
-        // Calculate the starting points for the patch in the output image
+        // 计算在输出图像中的起始点
         int sy_b = patch.sy - DEST_HEIGHT_ / 2;
         int sx_b = patch.sx - DEST_WIDTH_ / 2;
 
-        // Process the patch
+        // 处理补丁
         for (int py = 0; py < DEST_HEIGHT_; ++py)
         {
             for (int px = 0; px < DEST_WIDTH_; ++px)
@@ -311,16 +265,16 @@ __global__ void accumulateKernel(
                 int rander_x = sx_b + px;
                 int rander_y = sy_b + py;
 
-                if (rander_x >= 0 && rander_x < randerMapWidth && rander_y >= 0 && rander_y < randerMapHeight)
+                if (rander_x >= 0 && rander_x < randerMapWidthVal && rander_y >= 0 && rander_y < randerMapHeightVal)
                 {
-                    // Accumulate the patch into the render map
+                    // 将补丁添加到渲染图
                     for (int c = 0; c < channels; ++c)
                     {
-                        atomicAdd(&d_randerMap[(rander_y * randerMapWidth + rander_x) * channels + c], patch.simg[(py * DEST_WIDTH_ + px) * channels + c]);
+                        atomicAdd(&d_randerMap[(rander_y * randerMapWidthVal + rander_x) * channels + c], patch.simg[(py * DEST_WIDTH_ + px) * channels + c]);
                     }
 
-                    // Count how many patches contributed to each pixel
-                    atomicAdd(&d_randerCount[rander_y * randerMapWidth + rander_x], 1.0f);
+                    // 统计每个像素被多少个补丁贡献
+                    atomicAdd(&d_randerCount[rander_y * randerMapWidthVal + rander_x], 1.0f);
                 }
             }
         }
@@ -328,19 +282,23 @@ __global__ void accumulateKernel(
 }
 
 
-__global__ void normalizeKernel(float *d_randerMap, float *d_randerCount, int randerMap_width, int randerMap_height, int channels)
+__global__ void normalizeKernel(int channels)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < randerMap_width && y < randerMap_height)
+    // 获取宽度和高度，通过解引用指针
+    int randerMapWidth = d_randerMapWidth[0];
+    int randerMapHeight = d_randerMapHeight[0];
+
+    if (x < randerMapWidth && y < randerMapHeight)
     {
         for (int c = 0; c < channels; ++c)
         {
-            int idx = (y * randerMap_width + x) * channels + c;
-            if (d_randerCount[y * randerMap_width + x] > 0)
+            int idx = (y * randerMapWidth + x) * channels + c;
+            if (d_randerCount[y * randerMapWidth + x] > 0)
             {
-                d_randerMap[idx] /= d_randerCount[y * randerMap_width + x];
+                d_randerMap[idx] /= d_randerCount[y * randerMapWidth + x];
             }
         }
     }
@@ -348,55 +306,66 @@ __global__ void normalizeKernel(float *d_randerMap, float *d_randerCount, int ra
 
 
 __global__ void computeBoundaryKernel(RanderMapPatch *d_ppRanderMapPatch, 
-    const RawImageParameter rawImageParameter, 
-    int *sx_begin, int *sy_begin, 
-    int *sx_end, int *sy_end, 
     int DEST_WIDTH_, int DEST_HEIGHT_)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < rawImageParameter.m_xLensNum && y < rawImageParameter.m_yLensNum)
+
+    if (x < d_rawImageParameter.m_xLensNum && y < d_rawImageParameter.m_yLensNum &&
+        x >= 0 && y >= 0) // Ensure x and y are within valid bounds
     {
         // 使用一维数组访问
-        int sy = d_ppRanderMapPatch[y * rawImageParameter.m_xLensNum + x].sy;
-        int sx = d_ppRanderMapPatch[y * rawImageParameter.m_xLensNum + x].sx;
+        int sy = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sy;
+        int sx = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sx;
 
-        atomicMin(sx_begin, sx - DEST_WIDTH_ / 2);
-        atomicMin(sy_begin, sy - DEST_HEIGHT_ / 2);
-        atomicMax(sx_end, sx + DEST_WIDTH_ / 2);
-        atomicMax(sy_end, sy + DEST_HEIGHT_ / 2);
+        atomicMin(d_sx_begin, sx - DEST_WIDTH_ / 2);
+        atomicMin(d_sy_begin, sy - DEST_HEIGHT_ / 2);
+        atomicMax(d_sx_end, sx + DEST_WIDTH_ / 2);
+        atomicMax(d_sy_end, sy + DEST_HEIGHT_ / 2);
     }
 }
 
 
-__global__ void processPatchKernel(
-    float *d_randerImg, float *d_tmp, float *d_simg,
-    const RawImageParameter rawImageParameter,
-    const MicroImageParameter microImageParameter,
-    float **ppLensMeanDisp,
-    int offsetX, int offsetY, int patchWidth, int patchHeight, int channels,
-    RanderMapPatch *d_ppRanderMapPatch)  // Changed to pointer to a flat array
+__global__ void processPatchKernel(RanderMapPatch* d_ppRanderMapPatch,
+    float *d_randerImg,
+    int patchWidth, int patchHeight, int channels
+) 
 {
+    extern __shared__ float sharedMem[];
+
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < rawImageParameter.m_xLensNum && y < rawImageParameter.m_yLensNum)
+    // Adjust the range to match the CPU code
+    int xAdjusted = x + d_rawImageParameter.m_xCenterBeginOffset;
+    int yAdjusted = y + d_rawImageParameter.m_yCenterBeginOffset;
+
+    // Check if the adjusted indices are within the valid range
+    if (xAdjusted < d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset &&
+        yAdjusted < d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset)
     {
-        // Step 1: Get lens center position (sx, sy) from MicroImageParameter
-        Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
+        Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted];
+        int blockSize = fabsf(roundf(d_ppLensMeanDisp[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted]));
+        int starty = curCenterPos.y - blockSize / 2 - d_rawImageParameter.m_yPixelBeginOffset;
+        int startx = curCenterPos.x - blockSize / 2 - d_rawImageParameter.m_xPixelBeginOffset;
+        startx = max(startx, 0);
+        starty = max(starty, 0);
 
-        // Calculate the patch block size based on lens displacement (using ppLensMeanDisp)
-        int blockSize = fabsf(roundf(d_ppLensMeanDisp[y * rawImageParameter.m_xLensNum + x]));
+        float *d_srcImg = d_randerImg + (starty * d_rawImageParameter.m_xLensNum + startx) * channels;
+        float *d_simg = d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].simg;
 
-        // Step 2: Define the start coordinates of the patch (startx, starty)
-        int starty = curCenterPos.y - blockSize / 2 - rawImageParameter.m_yPixelBeginOffset;
-        int startx = curCenterPos.x - blockSize / 2 - rawImageParameter.m_xPixelBeginOffset;
+        // Load data into shared memory
+        int tx = threadIdx.x;
+        int ty = threadIdx.y;
+        int sharedIdx = ty * blockDim.x + tx;
 
-        // Step 3: Resize the patch using bilinear interpolation
-        float *d_srcImg = d_randerImg + (starty * rawImageParameter.m_xLensNum + startx) * channels;
+        for (int c = 0; c < channels; ++c) {
+            sharedMem[sharedIdx * channels + c] = d_srcImg[(ty * blockDim.x + tx) * channels + c];
+        }
+        __syncthreads();
 
-        // Resize using bilinear interpolation
+        // Perform bilinear interpolation
         for (int j = 0; j < patchHeight; ++j)
         {
             for (int i = 0; i < patchWidth; ++i)
@@ -407,140 +376,145 @@ __global__ void processPatchKernel(
                 int ix = (int)fx;
                 int iy = (int)fy;
 
-                // Perform bilinear interpolation
+                // Perform bilinear interpolation using shared memory
                 float wx = fx - ix;
                 float wy = fy - iy;
 
                 for (int c = 0; c < channels; ++c)
                 {
-                    float top_left = d_srcImg[(iy * rawImageParameter.m_xLensNum + ix) * channels + c];
-                    float top_right = d_srcImg[(iy * rawImageParameter.m_xLensNum + ix + 1) * channels + c];
-                    float bottom_left = d_srcImg[((iy + 1) * rawImageParameter.m_xLensNum + ix) * channels + c];
-                    float bottom_right = d_srcImg[((iy + 1) * rawImageParameter.m_xLensNum + ix + 1) * channels + c];
+                    float top_left = sharedMem[(iy * blockDim.x + ix) * channels + c];
+                    float top_right = sharedMem[(iy * blockDim.x + ix + 1) * channels + c];
+                    float bottom_left = sharedMem[((iy + 1) * blockDim.x + ix) * channels + c];
+                    float bottom_right = sharedMem[((iy + 1) * blockDim.x + ix + 1) * channels + c];
 
                     float interpolated = (1 - wx) * (1 - wy) * top_left +
                                          wx * (1 - wy) * top_right +
                                          (1 - wx) * wy * bottom_left +
                                          wx * wy * bottom_right;
-
-                    d_tmp[(j * patchWidth + i) * channels + c] = interpolated;
+                    d_simg[(j * patchWidth + i) * channels + c] = interpolated;
                 }
             }
         }
 
-        // Step 4: Flip the patch horizontally (or vertically if needed)
+        // Mirror the patch
         for (int j = 0; j < patchHeight; ++j)
         {
             for (int i = 0; i < patchWidth; ++i)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                    d_simg[(j * patchWidth + i) * channels + c] = d_tmp[(j * patchWidth + (patchWidth - 1 - i)) * channels + c];
+                    d_simg[(j * patchWidth + i) * channels + c] = d_simg[(j * patchWidth + (patchWidth - 1 - i)) * channels + c];
                 }
             }
         }
 
-        // Step 5: Store the processed patch information in RanderMapPatch
-        int patchIdx = y * rawImageParameter.m_xLensNum + x;  // Flattened index
+        // Store the processed patch information in RanderMapPatch
+        int patchIdx = yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted;  // Flattened index 
         d_ppRanderMapPatch[patchIdx].sy = curCenterPos.y;
         d_ppRanderMapPatch[patchIdx].sx = curCenterPos.x;
-        d_ppRanderMapPatch[patchIdx].simg = d_simg;  // Store the flipped and resized patch
     }
 }
 
-void ImageRander::imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, 
-    const MicroImageParameter &microImageParameter, cv::Mat &randerImg, 
-    cv::Mat &destImg)
+
+
+
+void ImageRander::imageRander(const RawImageParameter &rawImageParameter, 
+    const MicroImageParameter &microImageParameter, float *d_randerImg)
 {
-    // 1. 在设备上分配内存
-    RanderMapPatch *d_ppRanderMapPatch;
-    cudaMalloc(&d_ppRanderMapPatch, rawImageParameter.m_yLensNum * rawImageParameter.m_xLensNum * sizeof(RanderMapPatch));
+   
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-    // 2. 在主机上获取指向这个内存块的指针
-    RanderMapPatch *ppRanderMapPatch = d_ppRanderMapPatch;
-
-    // 3. Allocate device memory for source image, temporary images and render map
-    float *d_randerImg, *d_tmp, *d_simg;
-    size_t imgSize = randerImg.rows * randerImg.cols * randerImg.channels() * sizeof(float);
-    cudaMalloc(&d_randerImg, imgSize);
-    cudaMemcpy(d_randerImg, randerImg.ptr<float>(), imgSize, cudaMemcpyHostToDevice);
-
-    size_t tmpSize = DEST_WIDTH * DEST_HEIGHT * randerImg.channels() * sizeof(float);
-    cudaMalloc(&d_tmp, tmpSize);
-    cudaMalloc(&d_simg, tmpSize);
-
-    // 4. Process each patch (resizing and flipping) in parallel
-    dim3 blockSize(16, 16);
+    // Step 1: Process patch kernel
+    cudaEventRecord(start); 
+    dim3 blockSize(32, 32);
     dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x, (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
-    processPatchKernel<<<gridSize, blockSize>>>(d_randerImg, d_tmp, d_simg, rawImageParameter, microImageParameter, ppLensMeanDisp, 0, 0, DEST_WIDTH, DEST_HEIGHT, randerImg.channels(), ppRanderMapPatch);
-    cudaDeviceSynchronize();
+    
+    int sharedMemSize = blockSize.x * blockSize.y * 3 * sizeof(float);
+    processPatchKernel<<<gridSize, blockSize, sharedMemSize>>>(d_ppRanderMapPatch, d_randerImg, DEST_WIDTH, DEST_HEIGHT, 3);
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    cudaEventRecord(stop); 
+    cudaEventSynchronize(stop); 
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+    printf("Process Patch Kernel Time: %f ms\n", ms); 
 
-    // 5. Compute boundaries of the render map
-    int *sx_begin, *sy_begin, *sx_end, *sy_end;
-    cudaMalloc(&sx_begin, sizeof(int));
-    cudaMalloc(&sy_begin, sizeof(int));
-    cudaMalloc(&sx_end, sizeof(int));
-    cudaMalloc(&sy_end, sizeof(int));
 
-    cudaMemset(sx_begin, INT_MAX, sizeof(int));
-    cudaMemset(sy_begin, INT_MAX, sizeof(int));
-    cudaMemset(sx_end, INT_MIN, sizeof(int));
-    cudaMemset(sy_end, INT_MIN, sizeof(int));
 
-    computeBoundaryKernel<<<gridSize, blockSize>>>(ppRanderMapPatch, rawImageParameter, sx_begin, sy_begin, sx_end, sy_end, DEST_WIDTH, DEST_HEIGHT);
-    cudaDeviceSynchronize();
+    // Step 2: Compute boundary kernel
+    cudaEventRecord(start); 
+    computeBoundaryKernel<<<gridSize, blockSize>>>(d_ppRanderMapPatch,  DEST_WIDTH, DEST_HEIGHT);
+    CUDA_CHECK(cudaGetLastError()); 
+    CUDA_CHECK(cudaDeviceSynchronize());
+    cudaEventRecord(stop); 
+    cudaEventSynchronize(stop); 
+    cudaEventElapsedTime(&ms, start, stop);
+    printf("Compute Boundary Kernel Time: %f ms\n", ms); 
 
-    // 6. Retrieve boundary values
+
+    // Step 3: Compute width and height kernel
+
     int h_sx_begin, h_sy_begin, h_sx_end, h_sy_end;
-    cudaMemcpy(&h_sx_begin, sx_begin, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&h_sy_begin, sy_begin, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&h_sx_end, sx_end, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&h_sy_end, sy_end, sizeof(int), cudaMemcpyDeviceToHost);
+    CUDA_CHECK(cudaMemcpyFromSymbol(&h_sx_begin, d_sx_begin, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyFromSymbol(&h_sy_begin, d_sy_begin, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyFromSymbol(&h_sx_end, d_sx_end, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyFromSymbol(&h_sy_end, d_sy_end, sizeof(int)));
 
-    int randerMapWidth = h_sx_end - h_sx_begin + 1;
-    int randerMapHeight = h_sy_end - h_sy_begin + 1;
+    int h_randerMapWidth = h_sx_end - h_sx_begin + 1;
+    int h_randerMapHeight = h_sy_end - h_sy_begin + 1;
 
-    // 7. Allocate GPU memory for render map and count
-    float *d_randerMap, *d_randerCount;
-    size_t randerMapSize = randerMapWidth * randerMapHeight * randerImg.channels() * sizeof(float);
-    size_t randerCountSize = randerMapWidth * randerMapHeight * sizeof(float);
-    cudaMalloc(&d_randerMap, randerMapSize);
-    cudaMalloc(&d_randerCount, randerCountSize);
-    cudaMemset(d_randerMap, 0, randerMapSize);
-    cudaMemset(d_randerCount, 0, randerCountSize);
+    size_t randerMapSize = h_randerMapWidth * h_randerMapHeight * 3 * sizeof(float); 
+    size_t randerCountSize = h_randerMapWidth * h_randerMapHeight * sizeof(float);
 
-    // 8. 使用统一的 accumulateKernel 来累加结果
+
+    float* d_randerMap_host;
+    float* d_randerCount_host;
+    CUDA_CHECK(cudaMalloc(&d_randerMap_host, randerMapSize));
+    CUDA_CHECK(cudaMalloc(&d_randerCount_host, randerCountSize));
+
+    // 初始化设备内存
+    CUDA_CHECK(cudaMemset(d_randerMap_host, 0, randerMapSize));
+    CUDA_CHECK(cudaMemset(d_randerCount_host, 0, randerCountSize));
+
+    // 将指针值传递给 __device__ 指针变量
+    CUDA_CHECK(cudaMemcpyToSymbol(d_randerMap, &d_randerMap_host, sizeof(float*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_randerCount, &d_randerCount_host, sizeof(float*)));
+
+    // Step 5: Accumulate kernel
+    cudaEventRecord(start); // 记录开始时间
     gridSize.x = (rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x;
     gridSize.y = (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y;
 
-    // 调用统一的 accumulateKernel 核函数
-    accumulateKernel<<<gridSize, blockSize>>>(
-        d_randerMap, d_randerCount, d_ppRanderMapPatch, 
-        rawImageParameter.m_xLensNum, rawImageParameter.m_yLensNum, 
-        DEST_WIDTH, DEST_HEIGHT, randerMapWidth, randerMapHeight, randerImg.channels()
-    );
-    cudaDeviceSynchronize();
+    accumulateKernel<<<gridSize, blockSize>>>( d_ppRanderMapPatch, 
+                                              DEST_WIDTH, DEST_HEIGHT, 3); // 3通道
+    CUDA_CHECK(cudaGetLastError()); 
+    CUDA_CHECK(cudaDeviceSynchronize());
+    cudaEventRecord(stop); 
+    cudaEventSynchronize(stop); 
+    cudaEventElapsedTime(&ms, start, stop);
+    printf("Accumulate Kernel Time: %f ms\n", ms); 
 
-    // 9. Normalize the render map on GPU
-    gridSize.x = (randerMapWidth + blockSize.x - 1) / blockSize.x;
-    gridSize.y = (randerMapHeight + blockSize.y - 1) / blockSize.y;
-    
-    // 调用 normalizeKernel 来归一化渲染图
-    normalizeKernel<<<gridSize, blockSize>>>(d_randerMap, d_randerCount, randerMapWidth, randerMapHeight, randerImg.channels());
 
-    // 10. Copy the result to host and create output image
-    //float *h_randerMap = new float[randerMapWidth * randerMapHeight * randerImg.channels()];
-    //cudaMemcpy(h_randerMap, d_randerMap, randerMapSize, cudaMemcpyDeviceToHost);
-    //destImg = cv::Mat(randerMapHeight, randerMapWidth, randerImg.type(), h_randerMap);
+    // Step 6: Normalize kernel
+    cudaEventRecord(start); 
+    gridSize.x = (h_randerMapWidth + blockSize.x - 1) / blockSize.x;
+    gridSize.y = (h_randerMapHeight + blockSize.y - 1) / blockSize.y;
+    normalizeKernel<<<gridSize, blockSize>>>( 3); // 3通道
+    CUDA_CHECK(cudaGetLastError()); 
+    CUDA_CHECK(cudaDeviceSynchronize());
+    cudaEventRecord(stop); 
+    cudaEventSynchronize(stop); 
+    cudaEventElapsedTime(&ms, start, stop);
+    printf("Normalize Kernel Time: %f ms\n", ms); 
 
-    // 11. Clean up GPU memory
-    cudaFree(d_randerMap);
-    cudaFree(d_randerCount);
-    cudaFree(d_randerImg);
-    cudaFree(d_tmp);
-    cudaFree(d_simg);
-    cudaFree(d_ppRanderMapPatch);  // Free the allocated memory for the patch data
+
+   
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 }
+
 
 
 

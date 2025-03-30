@@ -14,6 +14,14 @@
 #include "CommFunc.h"
 #include "DataDeal.h"
 
+//修改了WIDTH和HEIGHT,此处参数只能影响到渲染图的生成效果
+#define MEAN_DISP_LEN_RADIUS 18//平均距离长度 8 注意该参数在需要让计算深度的点尽量都在一个圆内(方型)  10
+#define PATCH_SCALE9 9//路径比例 9
+#define RANDER_SCALE 0.9//渲染比例 render  0.35
+#define DEST_WIDTH 44//38 27 44
+#define DEST_HEIGHT 44//38 27 44
+
+
 class DataParameter;
 struct RawImageParameter;
 struct MicroImageParameter;
@@ -34,7 +42,8 @@ public:
 	void imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask);//�Դ����Ŷ�mask����������ӿ׾���Ⱦ
 	void imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp);//��û�����Ŷ�mask����������ӿ׾���Ⱦ
 private:
-	void imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg);
+	void imageRander(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, float *d_randerImg);
+//void imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg);
 	void imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin);//ȥ���߽��ɫ�ն�
 	void outputSparseSceneDepth(string folderName, cv::Mat &sceneSparseDepth, cv::Mat &sceneDepthMask);
 };

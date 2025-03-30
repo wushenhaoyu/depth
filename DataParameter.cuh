@@ -11,6 +11,21 @@
 #define __DATAPARAMETER_H__
 
 #include "CommFunc.h"
+#include "ImageRander.h"
+#include <cuda_runtime.h>
+
+#define CUDA_CHECK(call) {                                                   \
+    cudaError_t err = call;                                                   \
+    if (err != cudaSuccess) {                                                 \
+        fprintf(stderr, "CUDA error in function '%s' at %s:%d (call: %s):\n", \
+                __func__, __FILE__, __LINE__, #call);                         \
+        fprintf(stderr, "Error code: %d\n", err);                              \
+        fprintf(stderr, "Error message: %s\n", cudaGetErrorString(err));       \
+        exit(EXIT_FAILURE);                                                   \
+    }                                                                          \
+}
+
+
 
 #define NEIGHBOR_MATCH_LENS_NUM 6 //����ƥ��͸���ĸ���
 
@@ -166,5 +181,26 @@ private:
 };
 
 
+extern __constant__ RawImageParameter d_rawImageParameter;
+extern __constant__ DisparityParameter d_disparityParameter;
+extern __constant__ FilterParameterDevice d_filterPatameterDevice; 
+extern __device__ MicroImageParameterDevice d_microImageParameter; 
+extern __device__ float* d_costVol;
+extern __device__ float* d_rawDisp;
+extern __device__ float* d_ppLensMeanDisp;
+extern __device__ float* d_renderCache;
+extern __device__ float* d_inputImg;
+extern __device__ float* d_inputImgRec;
+extern __device__ RanderMapPatch* d_ppRanderMapPatch;
+extern __device__ float* d_tmp;
+extern __device__ float* d_simg;
+extern __device__ int *d_sx_begin, *d_sy_begin, *d_sx_end, *d_sy_end;
+extern __device__ int *d_randerMapWidth, *d_randerMapHeight;
+extern __constant__ float d_fltMax;
+extern __constant__ int d_meanDispLenRadius;
+extern __constant__ int d_patchScale9;
+extern __constant__ float d_randerScale;
+extern __constant__ int d_destWidth;
+extern __constant__ int d_destHeight;
 
 #endif

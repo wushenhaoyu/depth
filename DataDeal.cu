@@ -48,46 +48,45 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
-extern __device__ float* d_costVol;
-extern __device__ float* d_rawDisp;
-extern __constant__ DisparityParameter d_disparityParameter;
-extern __constant__ RawImageParameter d_rawImageParameter;
+
+
+
 
 __global__ void wtamatchKernel()
 {
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
     int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int height = d_rawImageParameter.m_recImgHeight;
-	int width = d_rawImageParameter.m_recImgWidth;
-    // 确保线程在图像范围内
-    if (y < height && x < width)
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int height = d_rawImageParameter.m_recImgHeight;
+    int width = d_rawImageParameter.m_recImgWidth;
+
+    if (x < width && y < height)
     {
-        float minCost = FLT_MAX;
-        int minDis = 0;
-
+        float minCost = d_fltMax;
+        float minDis = 0;
         for (int d = 1; d < d_disparityParameter.m_dispMax; d++) {
-            // 计算该视差下的代价值
-            float* costData = &d_costVol[d * height * width + y * width + x];
+			
+			int costIdx = (d- 1) * width * height + y * width + x;
 
-            // 若代价过小则跳过
-            if (*costData * 1000000.0f < 0.01f) {
+			if (costIdx >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
+				//printf("x:%d y:%d d:%d costIdx:%d\n", x, y, d, costIdx);
+				return;
+			}
+            float* costData = &d_costVol[costIdx];
+            if (*costData * 1000000.0f < 0.01f)
                 continue;
-            }
 
-            // 找到最小代价
             if (*costData < minCost) {
                 if (*costData <= 0.0001f) {
                     minCost = -10.0f;
                     minDis = 1;
                 } else {
-                    minCost = *costData;
+                    minCost = costData[0];
                     minDis = d;
                 }
             }
         }
-
-        // 将最小视差值存储到结果中
-        d_rawDisp[y * width + x] = minDis;
+		int disIdx = y * width + x;
+        d_rawDisp[disIdx] = minDis;
     }
 }
 
@@ -97,21 +96,36 @@ void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
     int width = disMap.cols;
     int height = disMap.rows;
 
-    // 分配线程块和网格
-    dim3 blockSize(32, 32);  // 例如每个块16x16个线程
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+    dim3 blockSize(8, 8);  // 每个线程块 16x16
+	dim3 gridSize((height  + blockSize.x - 1) / blockSize.x, (width + blockSize.y - 1) / blockSize.y);
 
-    // 调用核函数
+    // 创建 CUDA 事件
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    // 启动 CUDA 核函数
+    cudaEventRecord(start); // 记录开始时间
     wtamatchKernel<<<gridSize, blockSize>>>();
+    cudaEventRecord(stop);  // 记录结束时间
 
-    // 检查是否有 CUDA 错误
-    cudaDeviceSynchronize();
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        printf("CUDA error: %s\n", cudaGetErrorString(err));
-    }
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    // 计算运行时间
+    float milliseconds = 0;
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
-    cout << "MatchTest over!" << endl;
+    // 打印运行时间
+    std::cout << "CUDA kernel execution time: " << milliseconds << " ms" << std::endl;
+
+
+    // 销毁 CUDA 事件
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    std::cout << "MatchTest over!" << std::endl;
+
+	
 }
 
 void DataDeal::dispMapShow(std::string dispImgName, const cv::Mat &disMap)

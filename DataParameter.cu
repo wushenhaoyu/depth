@@ -3,6 +3,8 @@ using namespace cv;
 
 using namespace std;
 
+
+
 __constant__ RawImageParameter d_rawImageParameter;
 __constant__ DisparityParameter d_disparityParameter;
 __constant__ FilterParameterDevice d_filterPatameterDevice; 
@@ -13,104 +15,253 @@ __device__ float* d_ppLensMeanDisp;
 __device__ float* d_renderCache;
 __device__ float* d_inputImg;
 __device__ float* d_inputImgRec;
-void DataParameter::mapToGPU()
+__device__ RanderMapPatch* d_ppRanderMapPatch;
+__device__ float* d_tmp;
+__device__ float* d_simg;
+__device__ int *d_sx_begin, *d_sy_begin, *d_sx_end, *d_sy_end;
+__device__ int *d_randerMapWidth, *d_randerMapHeight;
+
+__constant__ float d_fltMax;
+__constant__ int d_meanDispLenRadius;
+__constant__ int d_patchScale9;
+__constant__ float d_randerScale;
+__constant__ int d_destWidth;
+__constant__ int d_destHeight;
+
+__global__ void testKernel() {
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+    // 在一个特定的索引位置修改 d_ppLensMeanDisp
+   // printf("m_xLensNum = %d, m_yLensNum = %d\n", d_rawImageParameter.m_xLensNum, d_rawImageParameter.m_yLensNum);
+    
+    
+    if (x < d_rawImageParameter.m_xLensNum && y < d_rawImageParameter.m_yLensNum) {
+        int index = y * d_rawImageParameter.m_xLensNum + x;
+        if (index == 0) {  
+			if (d_ppLensMeanDisp == nullptr) {
+				printf("d_ppLensMeanDisp is NULL\n");
+			}
+			else{
+				printf("d_ppLensMeanDisp is not NULL\n");
+			}
+            d_ppLensMeanDisp[index] = 0;  
+        }
+    }
+}
+
+__global__ void testRanderMapPatchKernel(RanderMapPatch* d_ppRanderMapPatch, int numPatches, int width, int height)
 {
-    // 将 RawImageParameter 映射到 GPU
-    cudaMemcpyToSymbol(d_rawImageParameter, &m_rawImageParameter, sizeof(RawImageParameter));
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numPatches) return;
 
-    // 将 DisparityParameter 映射到 GPU
-    cudaMemcpyToSymbol(d_disparityParameter, &m_disparityParameter, sizeof(DisparityParameter));
+    // 获取当前 RanderMapPatch 的 simg 指针
+    float* simg = d_ppRanderMapPatch[idx].simg;
 
-	int* d_validNeighborPixelsNum;
+    // 对 simg 指向的内存进行简单的写操作
+    for (int i = 0; i < width * height * 3; ++i)
+    {
+        simg[i] = static_cast<float>(idx * (i + 1)); // 写入一些模式数据
+    }
+
+    // 设置 sy 和 sx 的值
+    d_ppRanderMapPatch[idx].sy = idx * 10; // 示例值
+    d_ppRanderMapPatch[idx].sx = idx * 20; // 示例值
+
+
+    printf("Patch 0: sy = %d, sx = %d, simg[0] = %f, simg[1] = %f, simg[2] = %f\n",
+               d_ppRanderMapPatch[idx].sy, d_ppRanderMapPatch[idx].sx,
+               simg[0], simg[1], simg[2]);
+    
+}
+
+__global__ void testAssignAndPrintKernel()
+{
+    // 每个线程对全局变量赋值
+    *d_sx_begin = 10;
+    *d_sy_begin = 20;
+    *d_sx_end = 30;
+    *d_sy_end = 40;
+
+    // 打印全局变量的值
+    printf("d_sx_begin: %d\n", *d_sx_begin);
+    printf("d_sy_begin: %d\n", *d_sy_begin);
+    printf("d_sx_end: %d\n", *d_sx_end);
+    printf("d_sy_end: %d\n", *d_sy_end);
+}
+
+void DataParameter::mapToGPU() {
+    // 复制常量变量
+    CUDA_CHECK(cudaMemcpyToSymbol(d_rawImageParameter, &m_rawImageParameter, sizeof(RawImageParameter)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_disparityParameter, &m_disparityParameter, sizeof(DisparityParameter)));
+
+    float fltMax = FLT_MAX;
+    CUDA_CHECK(cudaMemcpyToSymbol(d_fltMax, &fltMax, sizeof(float)));
+
+    int meanDispLenRadius = MEAN_DISP_LEN_RADIUS;
+    int patchScale9 = PATCH_SCALE9;
+    float randerScale = RANDER_SCALE;
+    int destWidth = DEST_WIDTH;
+    int destHeight = DEST_HEIGHT;
+
+    CUDA_CHECK(cudaMemcpyToSymbol(d_meanDispLenRadius, &meanDispLenRadius, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_patchScale9, &patchScale9, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_randerScale, &randerScale, sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_destWidth, &destWidth, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_destHeight, &destHeight, sizeof(int)));
+
+    // 在主机端分配内存并将指针传递给设备端
+    float* h_costVol;
+    CUDA_CHECK(cudaMalloc((void**)&h_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_costVol, &h_costVol, sizeof(float*)));
+
+    float* h_rawDisp;
+    CUDA_CHECK(cudaMalloc((void**)&h_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_rawDisp, &h_rawDisp, sizeof(float*)));
+	
+
+    float* h_ppLensMeanDisp;
+    CUDA_CHECK(cudaMalloc((void**)&h_ppLensMeanDisp, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_ppLensMeanDisp, &h_ppLensMeanDisp, sizeof(float*)));
+
+    float* h_renderCache;
+    CUDA_CHECK(cudaMalloc((void**)&h_renderCache, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_renderCache, &h_renderCache, sizeof(float*)));
+
+    /*float* h_inputImg;
+    CUDA_CHECK(cudaMalloc((void**)&h_inputImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImg, &h_inputImg, sizeof(float*)));
+
+    float* h_inputImgRec;
+    CUDA_CHECK(cudaMalloc((void**)&h_inputImgRec, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImgRec, &h_inputImgRec, sizeof(float*)));*/
+
+
+int height = m_rawImageParameter.m_recImgHeight;
+int width = m_rawImageParameter.m_recImgWidth;
+int sizeOfFloat = (int)sizeof(float);
+
+    float* h_tmp;
+    CUDA_CHECK(cudaMalloc((void**)&h_tmp, DEST_WIDTH * DEST_HEIGHT * 3 * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_tmp, &h_tmp, sizeof(float*)));
+
+    float* h_simg;
+    CUDA_CHECK(cudaMalloc((void**)&h_simg, DEST_WIDTH * DEST_HEIGHT * 3 * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_simg, &h_simg, sizeof(float*)));
+
+	int* h_sx_begin;
+	CUDA_CHECK(cudaMalloc((void**)&h_sx_begin, sizeof(int)));
+	CUDA_CHECK(cudaMemcpyToSymbol(d_sx_begin, &h_sx_begin, sizeof(int*)));
+
+
+	int* h_sy_begin;
+	CUDA_CHECK(cudaMalloc((void**)&h_sy_begin, sizeof(int)));
+	CUDA_CHECK(cudaMemcpyToSymbol(d_sy_begin, &h_sy_begin, sizeof(int*)));
+
+	int* h_sx_end;
+	CUDA_CHECK(cudaMalloc((void**)&h_sx_end, sizeof(int)));
+	CUDA_CHECK(cudaMemcpyToSymbol(d_sx_end, &h_sx_end, sizeof(int*)));
+
+	int* h_sy_end;
+	CUDA_CHECK(cudaMalloc((void**)&h_sy_end, sizeof(int)));
+	CUDA_CHECK(cudaMemcpyToSymbol(d_sy_end, &h_sy_end, sizeof(int*)));
+
+	int* h_randerMapWidth;
+    CUDA_CHECK(cudaMalloc((void**)&h_randerMapWidth, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_randerMapWidth, &h_randerMapWidth, sizeof(int*)));
+
+	int* h_randerMapHeight;
+    CUDA_CHECK(cudaMalloc((void**)&h_randerMapHeight, sizeof(int)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_randerMapHeight, &h_randerMapHeight, sizeof(int*)));
+
+    // 为 MicroImageParameterDevice 分配内存并传递数据到设备
+    MicroImageParameterDevice h_microImageParameterDevice;
+    h_microImageParameterDevice.m_circleDiameter = m_microImageParameter.m_circleDiameter;
+    h_microImageParameterDevice.m_circleNarrow = m_microImageParameter.m_circleNarrow;
+    h_microImageParameterDevice.m_radiusDisEqu = m_microImageParameter.m_radiusDisEqu;
+
+    int lensCenterPointsSize = m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(cv::Point2d);
+    CUDA_CHECK(cudaMalloc((void**)&h_microImageParameterDevice.m_ppLensCenterPoints, lensCenterPointsSize));
+    CUDA_CHECK(cudaMemcpy(h_microImageParameterDevice.m_ppLensCenterPoints, m_microImageParameter.m_ppLensCenterPoints[0], lensCenterPointsSize, cudaMemcpyHostToDevice));
+
+    int pixelsMappingSetSize = m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(int);
+    CUDA_CHECK(cudaMalloc((void**)&h_microImageParameterDevice.m_ppPixelsMappingSet, pixelsMappingSetSize));
+    CUDA_CHECK(cudaMemcpy(h_microImageParameterDevice.m_ppPixelsMappingSet, m_microImageParameter.m_ppPixelsMappingSet[0], pixelsMappingSetSize, cudaMemcpyHostToDevice));
+
+    int matchNeighborLensSize = m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * NEIGHBOR_MATCH_LENS_NUM * sizeof(MatchNeighborLens);
+    CUDA_CHECK(cudaMalloc((void**)&h_microImageParameterDevice.m_ppMatchNeighborLens, matchNeighborLensSize));
+    CUDA_CHECK(cudaMemcpy(h_microImageParameterDevice.m_ppMatchNeighborLens, m_microImageParameter.m_ppMatchNeighborLens[0][0], matchNeighborLensSize, cudaMemcpyHostToDevice));
+
+    CUDA_CHECK(cudaMemcpyToSymbol(d_microImageParameter, &h_microImageParameterDevice, sizeof(MicroImageParameterDevice)));
+
+    // 为 FilterParameterDevice 分配内存并传递数据到设备
+    int* d_validNeighborPixelsNum;
     int* d_validPixelsMask;
     float* d_filterKernel;
 
-    // 为每个成员分配内存并传输数据
-    cudaMalloc((void**)&d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int));
-    cudaMemcpy(d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->data, 
-               m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int), cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMalloc((void**)&d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int)));
+    CUDA_CHECK(cudaMemcpy(d_validNeighborPixelsNum, m_filterPatameter.m_pValidNeighborPixelsNum->data, 
+                          m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int), cudaMemcpyHostToDevice));
 
-    cudaMalloc((void**)&d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int));
-    cudaMemcpy(d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->data, 
-               m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int), cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMalloc((void**)&d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int)));
+    CUDA_CHECK(cudaMemcpy(d_validPixelsMask, m_filterPatameter.m_pValidPixelsMask->data, 
+                          m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int), cudaMemcpyHostToDevice));
 
-    cudaMalloc((void**)&d_filterKernel, m_filterPatameter.m_filterKnernel.total() * sizeof(float));
-    cudaMemcpy(d_filterKernel, m_filterPatameter.m_filterKnernel.data, 
-               m_filterPatameter.m_filterKnernel.total() * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMalloc((void**)&d_filterKernel, m_filterPatameter.m_filterKnernel.total() * sizeof(float)));
+    CUDA_CHECK(cudaMemcpy(d_filterKernel, m_filterPatameter.m_filterKnernel.data, 
+                          m_filterPatameter.m_filterKnernel.total() * sizeof(float), cudaMemcpyHostToDevice));
 
-    // 2. 将这些指针传输到常量内存
     FilterParameterDevice filterParamDevice = { d_validNeighborPixelsNum, d_validPixelsMask, d_filterKernel };
-    cudaMemcpyToSymbol(d_filterPatameterDevice, &filterParamDevice, sizeof(FilterParameterDevice));
-
-	int rows = m_rawImageParameter.m_yLensNum;
-    int cols = m_rawImageParameter.m_xLensNum;
-    int srcImgHeight = m_rawImageParameter.m_srcImgHeight;
-    int srcImgWidth = m_rawImageParameter.m_srcImgWidth;
-    int neighborNum = NEIGHBOR_MATCH_LENS_NUM;
-
-    // 1. 将标量参数传输到 GPU
-    cudaMemcpy(&d_microImageParameter.m_circleDiameter, &m_microImageParameter.m_circleDiameter, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(&d_microImageParameter.m_circleNarrow, &m_microImageParameter.m_circleNarrow, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(&d_microImageParameter.m_radiusDisEqu, &m_microImageParameter.m_radiusDisEqu, sizeof(float), cudaMemcpyHostToDevice);
-
-    // 2. 为 m_ppLensCenterPoints 展平数组分配内存
-    cv::Point2d* flatLensCenterPoints = new cv::Point2d[rows * cols];
-    int index = 0;
-    for (int y = m_rawImageParameter.m_yCenterBeginOffset; y < m_rawImageParameter.m_yLensNum - m_rawImageParameter.m_yCenterEndOffset; y++) {
-        for (int x = m_rawImageParameter.m_xCenterBeginOffset; x < m_rawImageParameter.m_xLensNum - m_rawImageParameter.m_xCenterEndOffset; x++) {
-            flatLensCenterPoints[index++] = m_microImageParameter.m_ppLensCenterPoints[y][x];
-        }
-    }
-    // 在 GPU 上为 m_ppLensCenterPoints 分配内存
-    cudaMalloc((void**)&d_microImageParameter.m_ppLensCenterPoints, sizeof(cv::Point2d) * rows * cols);
-    // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.m_ppLensCenterPoints, flatLensCenterPoints, sizeof(cv::Point2d) * rows * cols, cudaMemcpyHostToDevice);
-
-    // 3. 为 m_ppPixelsMappingSet 展平数组分配内存
-    int* flatPixelsMappingSet = new int[srcImgHeight * srcImgWidth];
-    index = 0;
-    for (int y = 0; y < srcImgHeight; y++) {
-        for (int x = 0; x < srcImgWidth; x++) {
-            flatPixelsMappingSet[index++] = m_microImageParameter.m_ppPixelsMappingSet[y][x];
-        }
-    }
-    // 在 GPU 上为 m_ppPixelsMappingSet 分配内存
-    cudaMalloc((void**)&d_microImageParameter.m_ppPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth);
-    // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.m_ppPixelsMappingSet, flatPixelsMappingSet, sizeof(int) * srcImgHeight * srcImgWidth, cudaMemcpyHostToDevice);
-
-    // 4. 为 m_ppMatchNeighborLens 展平数组分配内存
-    MatchNeighborLens* flatMatchNeighborLens = new MatchNeighborLens[rows * cols * neighborNum];
-    index = 0;
-    for (int y = 0; y < rows; y++) {
-        for (int x = 0; x < cols; x++) {
-            for (int z = 0; z < neighborNum; z++) {
-                // 将 MatchNeighborLens 对象展平到 flatMatchNeighborLens 数组中
-                flatMatchNeighborLens[index++] = m_microImageParameter.m_ppMatchNeighborLens[y][x][z];
-            }
-        }
-    }
-    // 在 GPU 上为 m_ppMatchNeighborLens 分配内存
-    cudaMalloc((void**)&d_microImageParameter.m_ppMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum);
-    // 将数据传输到 GPU
-    cudaMemcpy(d_microImageParameter.m_ppMatchNeighborLens, flatMatchNeighborLens, sizeof(MatchNeighborLens) * rows * cols * neighborNum, cudaMemcpyHostToDevice);
-
-	cudaMalloc((void**)&d_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
-    cudaMemset(d_costVol, 0, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
-	cudaMalloc((void**)&d_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
-    
-    // 初始化为固定值 15 (使用 cudaMemset 来初始化设备内存)
-    cudaMemset(d_rawDisp, 15, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_filterPatameterDevice, &filterParamDevice, sizeof(FilterParameterDevice)));
 	
-	cudaMalloc(&d_ppLensMeanDisp, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(float));
+	    // 1. 主机端分配 RanderMapPatch 数组
+		RanderMapPatch* h_ppRanderMapPatch = new RanderMapPatch[m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum];
+
+		// 2. 为每个 RanderMapPatch 的 simg 分配设备内存
+		float** h_simgDevice = new float*[m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum];
+		for (int i = 0; i < m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum; ++i) {
+			CUDA_CHECK(cudaMalloc((void**)&h_simgDevice[i], DEST_WIDTH * DEST_HEIGHT * 3 * sizeof(float)));
+			h_ppRanderMapPatch[i].simg = h_simgDevice[i]; // 将设备内存地址存储在主机端的 RanderMapPatch 中
+		}
+	
+		// 3. 设备端分配 RanderMapPatch 数组
+		CUDA_CHECK(cudaMalloc((void**)&d_ppRanderMapPatch, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(RanderMapPatch)));
+	
+		// 4. 复制结构体数组到设备端
+		CUDA_CHECK(cudaMemcpy(d_ppRanderMapPatch, h_ppRanderMapPatch, m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum * sizeof(RanderMapPatch), cudaMemcpyHostToDevice));
+	
+	
+		// 6. 释放主机端数据
+		delete[] h_ppRanderMapPatch;
+		delete[] h_simgDevice;
+	
 }
 
 void DataParameter::UpdateImgToGPU()
 {
-	size_t inputImgSize = m_inputImg.total() * m_inputImg.elemSize();      // 计算图像的字节大小
-	size_t inputImgRecSize = m_inputImgRec.total() * m_inputImgRec.elemSize();  // 计算图像的字节大小
-	cudaMalloc((void**)&d_inputImg, inputImgSize * sizeof(float));      // 为输入图像分配内存
-	cudaMalloc((void**)&d_inputImgRec, inputImgRecSize * sizeof(float));  // 为裁剪后的图像分配内存
+    // 确保输入图像和裁剪后的图像是连续的
+    cv::Mat inputImgContinuous = m_inputImg.isContinuous() ? m_inputImg : m_inputImg.clone();
+    cv::Mat inputImgRecContinuous = m_inputImgRec.isContinuous() ? m_inputImgRec : m_inputImgRec.clone();
+
+    // 计算图像的字节大小
+    size_t inputImgSize = inputImgContinuous.total() * inputImgContinuous.elemSize();
+    size_t inputImgRecSize = inputImgRecContinuous.total() * inputImgRecContinuous.elemSize();
+
+    // 为输入图像分配内存
+	CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
+
+	// 为裁剪后的图像分配内存
+	CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
+
+    // 将输入图像数据从主机复制到设备
+    CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgContinuous.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+
+    // 将裁剪后的图像数据从主机复制到设备
+    CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecContinuous.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+
+    // 将设备指针复制到 __device__ 变量
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImg, &d_inputImg, sizeof(float*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImgRec, &d_inputImgRec, sizeof(float*)));
 }
 	
 
@@ -249,7 +400,6 @@ void DataParameter::imageBaseMessageInit(std::string inputImgName, int filterRad
 	m_disparityParameter.m_disNum = double(dispMax - dispMin) / m_disparityParameter.m_dispStep; //�Ӳ�label��Ŀ
 	m_filterPatameter.m_filterKnernel = cv::Mat::ones(2 * filterRadius + 1, 2 * filterRadius + 1, CV_32FC1);//�����˲��뾶���������
 	m_microImageParameter.m_radiusDisEqu = (circleDiameter / 2 - m_microImageParameter.m_circleNarrow)*(circleDiameter / 2 - m_microImageParameter.m_circleNarrow);
-
 	std::string inputImagePath = m_folderPath + "/" + inputImgName;
 	cout<<"m_folderPath："<<m_folderPath<<endl;
 	cout<<"inputImagePath："<<inputImagePath<<endl;
