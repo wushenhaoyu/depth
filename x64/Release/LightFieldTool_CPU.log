@@ -45,9 +45,9 @@
          Toolkit.cpp
      1>CAST\Toolkit.cpp(41): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
          ConfidenceCompute.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>ConfidenceCompute.cpp(11): warning C4005: “PI”: 宏重定义
                  c:\work\lightfieldtool_cpu\lightfieldtool_cpu\CommFunc.h(36) : 参见“PI”的前一个定义
      1>ConfidenceCompute.cpp(66): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
@@ -64,9 +64,9 @@
      1>ConfidenceCompute.cpp(251): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>ConfidenceCompute.cpp(254): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
          CostVolCompute.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>CostVolCompute.cpp(75): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>CostVolCompute.cpp(78): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>CostVolCompute.cpp(151): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
@@ -76,9 +76,9 @@
      1>CostVolCompute.cpp(188): warning C4305: “*=”: 从“double”到“float”截断
      1>CostVolCompute.cpp(205): warning C4305: “*=”: 从“double”到“float”截断
          CostVolFilter.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>C:\work\opencv\build\include\opencv2/gpu/gpu.hpp(1821): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
      1>CostVolFilter.cpp(33): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>CostVolFilter.cpp(34): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
@@ -94,9 +94,9 @@
      1>CostVolFilter.cpp(124): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
          DataDeal.cpp
          DataParameter.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>DataParameter.cpp(91): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
      1>DataParameter.cpp(92): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
      1>DataParameter.cpp(116): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
@@ -111,13 +111,13 @@
      1>DataParameter.cpp(297): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>DataParameter.cpp(298): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
          DepthComputeToolOne.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
          DepthComputeToolTwo.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
          DisparityRefinement.cpp
          GCoptimization.cpp
          graph.cpp
@@ -126,9 +126,9 @@
          maxflow.cpp
          GlobalOptimization.cpp
          ImageRander.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>ImageRander.cpp(45): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>ImageRander.cpp(46): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>ImageRander.cpp(50): warning C4244: “=”: 从“const double”转换到“float”，可能丢失数据
@@ -142,9 +142,9 @@
      1>ImageRander.cpp(178): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
          main.cpp
          SceneDepthCompute.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>SceneDepthCompute.cpp(144): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>SceneDepthCompute.cpp(145): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>SceneDepthCompute.cpp(237): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
@@ -157,20 +157,20 @@
      1>SceneDepthCompute.cpp(255): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
      1>SceneDepthCompute.cpp(261): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
          ToolOneTestDemo.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
          ToolTwoTestDemo.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>ToolTwoTestDemo.cpp(99): warning C4305: “初始化”: 从“double”到“float”截断
      1>ToolTwoTestDemo.cpp(143): warning C4305: “初始化”: 从“double”到“float”截断
      1>ToolTwoTestDemo.cpp(185): warning C4305: “初始化”: 从“double”到“float”截断
          VirtualDepthCompute.cpp
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.h(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(24): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(25): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+     1>c:\work\lightfieldtool_cpu\lightfieldtool_cpu\DataParameter.cuh(26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
      1>VirtualDepthCompute.cpp(30): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>VirtualDepthCompute.cpp(33): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
      1>VirtualDepthCompute.cpp(43): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据

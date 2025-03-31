@@ -1,4 +1,5 @@
 {
+    "version": "2.0.0",
     "tasks": [
         {
             "type": "cppbuild",
@@ -9,20 +10,20 @@
                 "-g",
                 "-o",
                 "${workspaceFolder}/bin/main",
-                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/main.cu",
                 "${workspaceFolder}/ConfidenceCompute.cu",
-                "${workspaceFolder}/ToolOneTestDemo.cpp",
+                //"${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
                 "${workspaceFolder}/CostVolCompute.cu",
                 "${workspaceFolder}/DataDeal.cu",
-                "${workspaceFolder}/DepthComputeToolOne.cpp",
-                "${workspaceFolder}/DepthComputeToolTwo.cpp",
+                //"${workspaceFolder}/DepthComputeToolOne.cpp",
+                "${workspaceFolder}/DepthComputeToolTwo.cu",
                 "${workspaceFolder}/GlobalOptimization.cpp",
                 "${workspaceFolder}/ImageRander.cu",
                 "${workspaceFolder}/SceneDepthCompute.cpp",
                 "${workspaceFolder}/VirtualDepthCompute.cpp",
                 "${workspaceFolder}/CostVolFilter.cu",
-                "${workspaceFolder}/DataParameter.cpp",
+                "${workspaceFolder}/DataParameter.cu",
                 "${workspaceFolder}/CAST/STCA.cpp",
                 "${workspaceFolder}/CAST/StereoDisparity.cpp",
                 "${workspaceFolder}/CAST/StereoHelper.cpp",
@@ -42,13 +43,12 @@
                 "-lopencv_imgproc",
                 "-lopencv_cudaimgproc",
                 "-lopencv_cudafilters",
-                "-lopencv_cudaimgproc",
-                "-lopencv_cudafilters",
                 "-lopencv_cudaarithm",
                 "-lcudart",
                 "-lcublas",
                 "-lcudnn",
-                "-lGCoptimization"
+                "-lGCoptimization",
+                "-rdc=true"  // 启用可重定位设备代码
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -61,7 +61,22 @@
                 "isDefault": true
             },
             "detail": "OpenCV + CUDA 项目编译任务"
+        },
+        {
+            "label": "Run CUDA with compute-sanitizer",
+            "type": "shell",
+            "command": "/usr/local/cuda/bin/compute-sanitizer",
+            "args": [
+                "--log-file", "${workspaceFolder}/compute_sanitizer_output.log", // 指定日志文件路径
+                "${workspaceFolder}/bin/main" // 运行你的程序，确保替换为你的程序路径
+            ],
+            "dependsOn": ["C/C++: nvcc 编译 OpenCV + CUDA 项目"], // 依赖于编译任务
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "detail": "使用 compute-sanitizer 运行程序并检查内存错误"
         }
-    ],
-    "version": "2.0.0"
+    ]
 }

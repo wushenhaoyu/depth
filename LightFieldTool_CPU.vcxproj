@@ -169,7 +169,7 @@
     <ClInclude Include="CostVolCompute.h" />
     <ClInclude Include="CostVolFilter.h" />
     <ClInclude Include="DataDeal.h" />
-    <ClInclude Include="DataParameter.h" />
+    <ClInclude Include="DataParameter.cuh" />
     <ClInclude Include="DepthComputeToolOne.h" />
     <ClInclude Include="DepthComputeToolTwo.h" />
     <ClInclude Include="DisparityRefinement.h" />

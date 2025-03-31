@@ -1,5 +1,5 @@
 #include "CostVolFilter.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 #include "DisparityRefinement.h"
 //#include "opencv2/gpu/gpu.hpp"  
 #include <time.h>
@@ -96,110 +96,98 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 }*/
 
 
-__global__ void costVolWindowFilterKernel(
-    float* costVol, float* divideMask, float* multiMask,
-    float* filterKernel, int width, int height, int channels,
-    int kernelSize, int xBegin, int yBegin, int xEnd, int yEnd,
-    int xPixelBeginOffset, int yPixelBeginOffset, int disNum) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+__global__ void costVolWindowFilterKernel()
+{
 
-    // 检查是否在处理区域内
-    if (x < xBegin || x > xEnd || y < yBegin || y > yEnd) {
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (y < d_rawImageParameter.m_yCenterBeginOffset || 
+        y >= d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset ||
+        x < d_rawImageParameter.m_xCenterBeginOffset ||
+        x >= d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset)
+    {
         return;
     }
 
-    // 计算当前像素的全局索引
-    int globalIdx = (y * width + x) * channels;
 
-    // 遍历每个视差值
-    for (int d = 0; d < disNum; d++) {
-        int srcIdx = ((y - yPixelBeginOffset) * width + (x - xPixelBeginOffset)) * channels + d;
-        float sum = 0.0f;
+    Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
+    int xBegin = curCenterPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
+    int yBegin = curCenterPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
+    int xEnd = curCenterPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
+    int yEnd = curCenterPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
 
-        // 应用卷积核
-        for (int ky = -kernelSize / 2; ky <= kernelSize / 2; ky++) {
-            for (int kx = -kernelSize / 2; kx <= kernelSize / 2; kx++) {
-                int nx = x + kx;
-                int ny = y + ky;
 
-                // 检查边界
-                if (nx >= xBegin && nx <= xEnd && ny >= yBegin && ny <= yEnd) {
-                    int neighborIdx = ((ny - yPixelBeginOffset) * width + (nx - xPixelBeginOffset)) * channels + d;
-                    int kernelIdx = (ky + kernelSize / 2) * kernelSize + (kx + kernelSize / 2);
-                    sum += costVol[neighborIdx] * filterKernel[kernelIdx];
+    int maskWidth = xEnd - xBegin + 1;
+    int maskHeight = yEnd - yBegin + 1;
+
+    for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
+        //printf("d = %d, x = %d , y = %d \n", d,x,y);
+        float* srcCost = &d_costVol[d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + y * d_rawImageParameter.m_recImgWidth + x];
+
+
+        float filteredValue = 0.0f;
+        //printf("filteredValue = %f\n", filteredValue);
+        for (int dy = -maskHeight / 2; dy <= maskHeight / 2; dy++) {
+            for (int dx = -maskWidth / 2; dx <= maskWidth / 2; dx++) {
+                int px = x + dx;
+                int py = y + dy;
+                if (px >= 0 && px < d_rawImageParameter.m_recImgWidth && py >= 0 && py < d_rawImageParameter.m_recImgHeight) {
+                    float weight = d_filterPatameterDevice.d_filterKernel[(dy + maskHeight / 2) * maskWidth + (dx + maskWidth / 2)];
+                    filteredValue += weight * srcCost[py * d_rawImageParameter.m_recImgWidth + px];
                 }
             }
         }
 
-        // 应用除法和乘法
-        float divideValue = divideMask[globalIdx];
-        float multiValue = multiMask[globalIdx];
 
-        if (divideValue != 0.0f) {
-            sum /= divideValue;
-            sum *= multiValue;
-        }
+        filteredValue /= d_filterPatameterDevice.d_validNeighborPixelsNum[0];  
+        filteredValue *= d_filterPatameterDevice.d_validPixelsMask[0];
+        srcCost[0] = filteredValue;
+        //printf("filteredValue = %f\n", srcCost[0]);
 
-        // 将结果写回
-        costVol[srcIdx] = sum;
     }
 }
 
-
 void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol)
 {
-    // 获取参数
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-    FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
 
-    int width = rawImageParameter.m_xLensNum;
-    int height = rawImageParameter.m_yLensNum;
-    int channels = disparityParameter.m_disNum;
-    int kernelSize = filterPatameter.m_filterKnernel.rows;
+    // 启动 CUDA 核函数
+    dim3 blockDim(32, 32);  
+    dim3 gridDim((rawImageParameter.m_xLensNum + blockDim.x - 1) / blockDim.x, 
+                 (rawImageParameter.m_yLensNum + blockDim.y - 1) / blockDim.y);
 
-    // 分配 GPU 内存
-    float* d_costVol;
-    float* d_divideMask;
-    float* d_multiMask;
-    float* d_filterKernel;
+    // 创建 CUDA 事件
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-    cudaMalloc(&d_costVol, width * height * channels * sizeof(float));
-    cudaMalloc(&d_divideMask, width * height * sizeof(float));
-    cudaMalloc(&d_multiMask, width * height * sizeof(float));
-    cudaMalloc(&d_filterKernel, kernelSize * kernelSize * sizeof(float));
+    // 启动 CUDA 核函数
+    cudaEventRecord(start); // 记录开始时间
+    costVolWindowFilterKernel<<<gridDim, blockDim>>>();
+    cudaEventRecord(stop);  // 记录结束时间
 
-    // 数据传输到 GPU
-    cudaMemcpy(d_costVol, costVol[0].ptr<float>(), width * height * channels * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_divideMask, filterPatameter.m_pValidNeighborPixelsNum->ptr<float>(), width * height * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_multiMask, filterPatameter.m_pValidPixelsMask->ptr<float>(), width * height * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_filterKernel, filterPatameter.m_filterKnernel.ptr<float>(), kernelSize * kernelSize * sizeof(float), cudaMemcpyHostToDevice);
+    // 检查 CUDA 错误
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
 
-    // 设置线程块大小和网格大小
-    dim3 blockSize(16, 16);
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+    // 计算运行时间
+    float milliseconds = 0;
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
-    // 调用核函数
-    costVolWindowFilterKernel<<<gridSize, blockSize>>>(
-        d_costVol, d_divideMask, d_multiMask, d_filterKernel,
-        width, height, channels, kernelSize,
-        microImageParameter.m_circleNarrow, microImageParameter.m_circleNarrow,
-        width - microImageParameter.m_circleNarrow, height - microImageParameter.m_circleNarrow,
-        rawImageParameter.m_xPixelBeginOffset, rawImageParameter.m_yPixelBeginOffset,
-        disparityParameter.m_disNum
-    );
-
-    // 同步检查
-    cudaDeviceSynchronize();
-
-    // 将结果传输回 CPU
-    cudaMemcpy(costVol[0].ptr<float>(), d_costVol, width * height * channels * sizeof(float), cudaMemcpyDeviceToHost);
-
-    // 释放 GPU 内存
-    cudaFree(d_costVol);
-    cudaFree(d_divideMask);
-    cudaFree(d_multiMask);
-    cudaFree(d_filterKernel);
+    // 打印运行时间
+    std::cout << "CUDA kernel execution time: " << milliseconds << " ms" << std::endl;
+    if (d_ppLensMeanDisp == nullptr) {
+        printf("d_ppLensMeanDisp is NULL\n");
+    }
+    else{
+        printf("d_ppLensMeanDisp is not NULL\n");
+    }
+    // 销毁 CUDA 事件
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    //testKernel<<<gridDim, blockDim>>>();
+    //CUDA_CHECK(cudaGetLastError());
+    //CUDA_CHECK(cudaDeviceSynchronize());
 }

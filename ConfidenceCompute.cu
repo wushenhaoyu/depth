@@ -1,5 +1,5 @@
 #include "ConfidenceCompute.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 #include <opencv2/cudaimgproc.hpp>  // 提供CUDA图像处理函数（如cvtColor）
 #include <opencv2/cudafilters.hpp>   // 提供CUDA滤波器（如Sobel）
 #include <opencv2/cudaarithm.hpp>
@@ -30,15 +30,12 @@ ConfidenceCompute::~ConfidenceCompute()
 }
 
 
-
-// CUDA内核：梯度滤波
 __global__ void gradientFilterKernel(
     const float* src_grad, float* dst_grad, const float* divideMask,
     int width, int height, int pitch,
     int microImageWidth, int microImageHeight,
     int xPixelBeginOffset, int yPixelBeginOffset,
     int circleDiameter, int circleNarrow,
-    const Point2d* lensCenterPoints,
     int xCenterBeginOffset, int yCenterBeginOffset,
     int xCenterEndOffset, int yCenterEndOffset)
 {
@@ -52,7 +49,7 @@ __global__ void gradientFilterKernel(
     {
         for (int lx = xCenterBeginOffset; lx < microImageWidth - xCenterEndOffset; lx++)
         {
-            Point2d centerPos = lensCenterPoints[ly * microImageWidth + lx];
+            Point2d centerPos = d_microImageParameter.m_ppLensCenterPoints[ly * microImageWidth + lx];
             int x_begin = centerPos.x - xPixelBeginOffset - circleDiameter / 2 + circleNarrow;
             int y_begin = centerPos.y - yPixelBeginOffset - circleDiameter / 2 + circleNarrow;
             int x_end = centerPos.x - xPixelBeginOffset + circleDiameter / 2 - circleNarrow;
@@ -74,19 +71,28 @@ __global__ void gradientFilterKernel(
                         }
                     }
                 }
-                dst_grad[y * pitch + x] = sum / divideMask[(y - y_begin) * (x_end - x_begin + 1) + (x - x_begin)];
+                int divideIndex = (y - y_begin) * (x_end - x_begin + 1) + (x - x_begin);
+                if (divideMask[divideIndex] != 0) // 防止除以零
+                {
+                    dst_grad[y * pitch + x] = sum / divideMask[divideIndex];
+                }
+                else
+                {
+                    dst_grad[y * pitch + x] = 0.0f;
+                }
             }
         }
     }
 }
 
+// CUDA内核：梯度圆掩码
 __global__ void gradientCircleMaskKernel(
-    const uchar* outPutImg, uchar* gradientCircleMask,
+    const unsigned char* outPutImg, unsigned char* gradientCircleMask,
     int imgCols, int imgRows, int imgStep,
     int xLensNum, int yLensNum,
     int xPixelBeginOffset, int yPixelBeginOffset,
     int circleDiameter, int circleNarrow,
-    Point2d* lensCenterPoints, int* pixelsMappingSet,
+    float2* lensCenterPoints, int* pixelsMappingSet,
     int xCenterBeginOffset, int yCenterBeginOffset,
     int xCenterEndOffset, int yCenterEndOffset,
     int circleGradPointNum)
@@ -97,7 +103,7 @@ __global__ void gradientCircleMaskKernel(
     if (x >= xLensNum - xCenterEndOffset || y >= yLensNum - yCenterEndOffset)
         return;
 
-    Point2d centerPos = lensCenterPoints[y * xLensNum + x];
+    float2 centerPos = lensCenterPoints[y * xLensNum + x];
     int curCenterIndex = y * xLensNum + x;
     int sumCount = 0;
 
@@ -126,7 +132,6 @@ __global__ void computeMMNConfidence(
     int microImageWidth, int microImageHeight,
     int xPixelBeginOffset, int yPixelBeginOffset,
     int circleDiameter, int circleNarrow,
-    const Point2d* lensCenterPoints,
     int xCenterBeginOffset, int yCenterBeginOffset,
     int xCenterEndOffset, int yCenterEndOffset)
 {
@@ -140,7 +145,7 @@ __global__ void computeMMNConfidence(
     {
         for (int lx = xCenterBeginOffset; lx < microImageWidth - xCenterEndOffset; lx++)
         {
-            Point2d centerPos = lensCenterPoints[ly * microImageWidth + lx];
+            Point2d centerPos = d_microImageParameter.m_ppLensCenterPoints[ly * microImageWidth + lx];
             int x_begin = centerPos.x - xPixelBeginOffset - circleDiameter / 2 + circleNarrow;
             int y_begin = centerPos.y - yPixelBeginOffset - circleDiameter / 2 + circleNarrow;
             int x_end = centerPos.x - xPixelBeginOffset + circleDiameter / 2 - circleNarrow;
@@ -167,174 +172,91 @@ __global__ void computeMMNConfidence(
                     sumCost += cost;
                 }
 
-                float confMMN = (dCostSec - dCostMin) / sumCost;
-                confidentMat[y * width + x] = confMMN;
-                confidentMat2[y * width + x] = confMMN;
+                if (sumCost != 0) // 防止除以零
+                {
+                    float confMMN = (dCostSec - dCostMin) / sumCost;
+                    confidentMat[y * width + x] = confMMN;
+                    confidentMat2[y * width + x] = confMMN;
+                }
+                else
+                {
+                    confidentMat[y * width + x] = 0.0f;
+                    confidentMat2[y * width + x] = 0.0f;
+                }
             }
         }
     }
 }
 
+
 void ConfidenceCompute::confidenceMeasureCompute(
     const DataParameter& dataParameter, cv::Mat*& costVol)
 {
     // 提取参数
-    RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-    FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
-    m_folderPath = dataParameter.m_folderPath;
+    auto rawImageParameter = dataParameter.getRawImageParameter();
+    auto microImageParameter = dataParameter.getMicroImageParameter();
+    auto disparityParameter = dataParameter.getDisparityParameter();
 
-    // 将输入图像转换为浮点类型
-    cv::Mat inputRecImg;
-    dataParameter.m_inputImgRec.convertTo(inputRecImg, CV_32FC3);
-
-    // 梯度指标计算（使用CUDA）
-    cv::cuda::GpuMat gpu_inputRecImg, gpu_im_gray, gpu_dst_x, gpu_dst_y, gpu_dst;
-    gpu_inputRecImg.upload(inputRecImg);
-    cv::cuda::cvtColor(gpu_inputRecImg, gpu_im_gray, COLOR_RGB2GRAY);
-    Ptr<cuda::Filter> sobelX = cuda::createSobelFilter(CV_32F, CV_32F, 1, 0, 3);
-    Ptr<cuda::Filter> sobelY = cuda::createSobelFilter(CV_32F, CV_32F, 0, 1, 3);
-
-    // 应用Sobel滤波器
-    sobelX->apply(gpu_im_gray, gpu_dst_x);
-    sobelY->apply(gpu_im_gray, gpu_dst_y);
-    cv::cuda::addWeighted(gpu_dst_x, 0.5, gpu_dst_y, 0.5, 0, gpu_dst);
-
-    cv::cuda::GpuMat gpu_dst_abs;
-    cv::cuda::abs(gpu_dst, gpu_dst_abs);
-
-    // 将结果转换为8位图像
-    cv::cuda::GpuMat gpu_dst_8u;
-    gpu_dst_abs.convertTo(gpu_dst_8u, CV_8UC1);
-    // 将梯度图传回CPU
-    cv::Mat src_grad;
-    gpu_dst.download(src_grad);
-
-    //std::cout<<"梯度图计算完成"<<std::endl;
+    int width = rawImageParameter.m_xLensNum;
+    int height = rawImageParameter.m_yLensNum;
 
     // CUDA内存分配
     float* d_src_grad;
     float* d_dst_grad;
     float* d_divideMask;
-    cudaMalloc(&d_src_grad, src_grad.total() * sizeof(float));
-    cudaMalloc(&d_dst_grad, src_grad.total() * sizeof(float));
-    cudaMalloc(&d_divideMask, src_grad.total() * sizeof(float));
+    float* d_costVol;
+    float* d_confidentMat;
+    float* d_confidentMat2;
 
-    cudaMemcpy(d_src_grad, src_grad.ptr<float>(), src_grad.total() * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_src_grad, width * height * sizeof(float));
+    cudaMalloc(&d_dst_grad, width * height * sizeof(float));
+    cudaMalloc(&d_divideMask, width * height * sizeof(float));
+    cudaMalloc(&d_costVol, width * height * disparityParameter.m_disNum * sizeof(float));
+    cudaMalloc(&d_confidentMat, width * height * sizeof(float));
+    cudaMalloc(&d_confidentMat2, width * height * sizeof(float));
+
+    // 假设 src_grad 和 costVol 已经准备好
+    float* src_grad = new float[width * height];
+    float* host_costVol = new float[width * height * disparityParameter.m_disNum];
+    for (int i = 0; i < width * height * disparityParameter.m_disNum; ++i) {
+        host_costVol[i] = static_cast<float>(costVol->at<float>(i));
+    }
+
+    cudaMemcpy(d_src_grad, src_grad, width * height * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_costVol, host_costVol, width * height * disparityParameter.m_disNum * sizeof(float), cudaMemcpyHostToDevice);
 
     // 遍历微透镜中心进行梯度滤波（CUDA内核）
     dim3 blockSize(16, 16);
-    dim3 gridSize((src_grad.cols + blockSize.x - 1) / blockSize.x, (src_grad.rows + blockSize.y - 1) / blockSize.y);
+    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
     gradientFilterKernel<<<gridSize, blockSize>>>(
         d_src_grad, d_dst_grad, d_divideMask,
-        src_grad.cols, src_grad.rows, src_grad.step,
+        width, height, width * sizeof(float),
         rawImageParameter.m_xLensNum, rawImageParameter.m_yLensNum,
         rawImageParameter.m_xPixelBeginOffset, rawImageParameter.m_yPixelBeginOffset,
         microImageParameter.m_circleDiameter, microImageParameter.m_circleNarrow,
-        *microImageParameter.m_ppLensCenterPoints,
         rawImageParameter.m_xCenterBeginOffset, rawImageParameter.m_yCenterBeginOffset,
         rawImageParameter.m_xCenterEndOffset, rawImageParameter.m_yCenterEndOffset);
 
     cudaDeviceSynchronize();
 
-
-
-    // 将结果传回CPU
-    cv::Mat dst_grad(src_grad.size(), CV_32FC1);
-    cudaMemcpy(dst_grad.ptr<float>(), d_dst_grad, dst_grad.total() * sizeof(float), cudaMemcpyDeviceToHost);
-
-
-    // 生成 outPutImg
-    cv::Mat outPutImg;
-    double minVal, maxVal;
-    cv::minMaxLoc(dst_grad, &minVal, &maxVal);
-    cv::Mat dst_grad2;
-    dst_grad.convertTo(dst_grad2, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
-    cv::threshold(dst_grad2, outPutImg, GRADIDENT_THRESHOLD, 255, cv::THRESH_BINARY);
-
-    // 将 m_ppPixelsMappingSet 转换为连续内存
-    int* h_pixelsMappingSet = new int[outPutImg.rows * outPutImg.cols];
-    for (int i = 0; i < outPutImg.rows; i++) {
-        for (int j = 0; j < outPutImg.cols; j++) {
-            h_pixelsMappingSet[i * outPutImg.cols + j] = microImageParameter.m_ppPixelsMappingSet[i][j];
-        }
-    }
-
-    // 将连续内存上传到 GPU
-    int* d_pixelsMappingSet;
-    cudaMalloc(&d_pixelsMappingSet, outPutImg.rows * outPutImg.cols * sizeof(int));
-    cudaMemcpy(d_pixelsMappingSet, h_pixelsMappingSet, outPutImg.rows * outPutImg.cols * sizeof(int), cudaMemcpyHostToDevice);
-
-    uchar* d_outPutImg;
-    cudaMalloc(&d_outPutImg, outPutImg.rows * outPutImg.cols * sizeof(uchar));
-    cudaMemcpy(d_outPutImg, outPutImg.data, outPutImg.rows * outPutImg.cols * sizeof(uchar), cudaMemcpyHostToDevice);
-
-    // 分配 GPU 内存用于梯度圆 mask
-    uchar* d_gradientCircleMask;
-    cudaMalloc(&d_gradientCircleMask, rawImageParameter.m_yLensNum * rawImageParameter.m_xLensNum * sizeof(uchar));
-    cudaMemset(d_gradientCircleMask, 0, rawImageParameter.m_yLensNum * rawImageParameter.m_xLensNum * sizeof(uchar));
-
-    // 调用 CUDA 内核
-    gradientCircleMaskKernel<<<gridSize, blockSize>>>(
-        d_outPutImg, d_gradientCircleMask,
-        outPutImg.cols, outPutImg.rows, outPutImg.step,
-        rawImageParameter.m_xLensNum, rawImageParameter.m_yLensNum,
-        rawImageParameter.m_xPixelBeginOffset, rawImageParameter.m_yPixelBeginOffset,
-        microImageParameter.m_circleDiameter, microImageParameter.m_circleNarrow,
-        *microImageParameter.m_ppLensCenterPoints, d_pixelsMappingSet,
-        rawImageParameter.m_xCenterBeginOffset, rawImageParameter.m_yCenterBeginOffset,
-        rawImageParameter.m_xCenterEndOffset, rawImageParameter.m_yCenterEndOffset,
-        CIRCLE_GRAD_POINT_NUM
-    );
-
-    cudaDeviceSynchronize();
-
-    // 将结果传回 CPU
-    m_pGradientCircleMask = new cv::Mat(rawImageParameter.m_yLensNum, rawImageParameter.m_xLensNum, CV_8UC1);
-    cudaMemcpy(m_pGradientCircleMask->ptr<uchar>(), d_gradientCircleMask, rawImageParameter.m_yLensNum * rawImageParameter.m_xLensNum * sizeof(uchar), cudaMemcpyDeviceToHost);
-
-    // 释放 GPU 内存
-    cudaFree(d_outPutImg);
-    cudaFree(d_pixelsMappingSet);
-    cudaFree(d_gradientCircleMask);
-
-    // 释放主机内存
-    delete[] h_pixelsMappingSet;
-
-    // 保存梯度结果
-    cv::imwrite(m_folderPath + "/gradientMeasureMask.png", outPutImg);
-
-
-
     // MMN置信度计算（CUDA内核）
-    float* d_costVol;
-    float* d_confidentMat;
-    float* d_confidentMat2;
-    cudaMalloc(&d_costVol, costVol->total() * sizeof(float));
-    cudaMalloc(&d_confidentMat, src_grad.total() * sizeof(float));
-    cudaMalloc(&d_confidentMat2, src_grad.total() * sizeof(float));
-
-    cudaMemcpy(d_costVol, costVol[0].ptr<float>(), costVol->total() * sizeof(float), cudaMemcpyHostToDevice);
-
     computeMMNConfidence<<<gridSize, blockSize>>>(
         d_costVol, d_confidentMat, d_confidentMat2,
-        src_grad.cols, src_grad.rows, disparityParameter.m_disNum,
+        width, height, disparityParameter.m_disNum,
         rawImageParameter.m_xLensNum, rawImageParameter.m_yLensNum,
         rawImageParameter.m_xPixelBeginOffset, rawImageParameter.m_yPixelBeginOffset,
         microImageParameter.m_circleDiameter, microImageParameter.m_circleNarrow,
-        *microImageParameter.m_ppLensCenterPoints,
         rawImageParameter.m_xCenterBeginOffset, rawImageParameter.m_yCenterBeginOffset,
         rawImageParameter.m_xCenterEndOffset, rawImageParameter.m_yCenterEndOffset);
 
     cudaDeviceSynchronize();
 
     // 将置信度结果传回CPU
-    cv::Mat confidentMat(src_grad.size(), CV_32FC1);
-    cv::Mat confidentMat2(src_grad.size(), CV_32FC1);
-    cudaMemcpy(confidentMat.ptr<float>(), d_confidentMat, confidentMat.total() * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(confidentMat2.ptr<float>(), d_confidentMat2, confidentMat2.total() * sizeof(float), cudaMemcpyDeviceToHost);
+    float* confidentMat = new float[width * height];
+    float* confidentMat2 = new float[width * height];
+    cudaMemcpy(confidentMat, d_confidentMat, width * height * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(confidentMat2, d_confidentMat2, width * height * sizeof(float), cudaMemcpyDeviceToHost);
 
     // 释放CUDA内存
     cudaFree(d_src_grad);
@@ -344,26 +266,177 @@ void ConfidenceCompute::confidenceMeasureCompute(
     cudaFree(d_confidentMat);
     cudaFree(d_confidentMat2);
 
+
+    // 将结果转换为cv::Mat
+    cv::Mat confidentMatCV(height, width, CV_32FC1, confidentMat);
+    cv::Mat confidentMat2CV(height, width, CV_32FC1, confidentMat2);
+
     // 保存结果
     cv::Mat conftmp, conftmp2;
-    confidentMat.convertTo(conftmp, CV_8UC1);
-    string storeName = m_folderPath + "/conf_measure.png";
+    confidentMatCV.convertTo(conftmp, CV_8UC1);
+    std::string storeName = dataParameter.m_folderPath + "/conf_measure.png";
     cv::imwrite(storeName, conftmp);
 
-    minMaxLoc(confidentMat2, &minVal, &maxVal);
-    confidentMat2.convertTo(conftmp2, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
-    storeName = m_folderPath + "/final_conf_measure.png";
+    double minVal, maxVal;
+    cv::minMaxLoc(confidentMat2CV, &minVal, &maxVal);
+    confidentMat2CV.convertTo(conftmp2, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
+    storeName = dataParameter.m_folderPath + "/final_conf_measure.png";
     cv::imwrite(storeName, conftmp2);
 
-    storeName = m_folderPath + "/ConfidentMask.png";
+    storeName = dataParameter.m_folderPath + "/ConfidentMask.png";
     setConfidentMask(conftmp2, storeName, rawImageParameter, microImageParameter);
+
+    cv::Mat inputRecImg;
+    dataParameter.m_inputImgRec.convertTo(inputRecImg, CV_32FC3);
 
     cv::Mat mask = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
     confidentCircleJudge(conftmp2, mask, rawImageParameter, microImageParameter);
     drawConfidentCircle(costVol, mask, rawImageParameter, microImageParameter, disparityParameter, inputRecImg);
 
-    std::string confidentImgStoreName = m_folderPath + "/confident_circle.png";
+    std::string confidentImgStoreName = dataParameter.m_folderPath + "/confident_circle.png";
     lowTextureAreaPlot(rawImageParameter, microImageParameter, conftmp2, mask, confidentImgStoreName, CircleDrawMode::e_gray, true);
+}
+
+void ConfidenceCompute::setConfidentMask(cv::Mat &confidentMat, std::string confidentMaskName, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter)
+{//设置置信度的mask
+	m_pConfidentMask = new cv::Mat(confidentMat.rows, confidentMat.cols, CV_8UC1);
+
+	cv::threshold(confidentMat, *m_pConfidentMask, FINAL_CONFIDENT_MEASURE_THRES, 255, THRESH_BINARY);
+	confidentMaskRepair(*m_pConfidentMask, rawImageParameter, microImageParameter);
+	cv::imwrite(confidentMaskName, *m_pConfidentMask);
+
+	std::string storeName = m_folderPath + "/confidentMatMask.xml";
+	storeDispMapToXML(storeName, *m_pConfidentMask);
+}
+
+void ConfidenceCompute::confidentCircleJudge(cv::Mat &confidentMat, cv::Mat &mask, const RawImageParameter &rawImageParameter,
+	const MicroImageParameter &microImageParameter)
+{
+//#pragma omp parallel for
+	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
+	{
+		uchar *yRows = (uchar *)mask.ptr<uchar>(y);
+		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
+		{
+			if (!confidentCircleJudge(confidentMat, y, x, rawImageParameter, microImageParameter))
+				yRows[x] = 255;
+		}
+	}
+}
+
+bool ConfidenceCompute::confidentCircleJudge(cv::Mat &confidentMat, int y, int x, const RawImageParameter &rawImageParameter,
+	const MicroImageParameter &microImageParameter)
+{
+	Point2d &centerPos = microImageParameter.m_ppLensCenterPoints[y][x];
+	int curCenterIndex = y*rawImageParameter.m_xLensNum + x;
+	double sumCircle = 0.0, countPoints = 0;
+
+	for (int py = centerPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
+		py <= centerPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; py++)
+	{
+		for (int px = centerPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
+			px <= centerPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; px++)
+		{
+			uchar *yConf = confidentMat.ptr<uchar>(py - rawImageParameter.m_yPixelBeginOffset);
+
+			if (microImageParameter.m_ppPixelsMappingSet[py][px] == curCenterIndex){
+				sumCircle += yConf[px - rawImageParameter.m_xPixelBeginOffset];
+				countPoints += 1.0;
+			}
+		}
+	}
+
+	if (sumCircle / countPoints > MNN_CONFIDENT_MEASURE_THRES)
+		return true;
+	else
+		return false;
+}
+
+void ConfidenceCompute::drawConfidentCircle(cv::Mat *&costVol, cv::Mat &mask, const RawImageParameter &rawImageParameter,
+	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, cv::Mat &srcImg)
+{
+	cv::Mat rawDisp = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
+	WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
+	double minVal, maxVal;
+	minMaxLoc(rawDisp, &minVal, &maxVal);
+	cv::Mat disp2;
+	rawDisp.convertTo(disp2, CV_8UC1, 255.0 / (maxVal - minVal), -minVal*255.0 / (maxVal - minVal));
+
+	cv::Mat inputImg;
+	srcImg.convertTo(inputImg, CV_8UC3);
+	//cv::cvtColor(inputImg, inputImg, CV_RGB2BGR);
+
+	std::string rawImgStoreName = m_folderPath + "/ori_circle.png";
+	lowTextureAreaPlot(rawImageParameter, microImageParameter, inputImg, mask, rawImgStoreName, CircleDrawMode::e_color, true);
+
+	std::string dispImgStoreName = m_folderPath + "/disp_circle.png";
+	lowTextureAreaPlot(rawImageParameter, microImageParameter, disp2, mask, dispImgStoreName, CircleDrawMode::e_gray, true);
+}
+
+void ConfidenceCompute::lowTextureAreaPlot(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter,
+	const Mat &img_input, const Mat &mask, const string &picName, CircleDrawMode _circleDrawMode, bool _isOffset)
+{
+	Mat res_input = img_input.clone();
+	int offsetY = _isOffset ? rawImageParameter.m_yPixelBeginOffset : 0;
+	int offsetX = _isOffset ? rawImageParameter.m_xPixelBeginOffset : 0;
+//#pragma omp parallel for
+	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
+	{
+		uchar *yRows = (uchar *)mask.ptr<uchar>(y);
+		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
+		{
+			if (yRows[x] > 125)
+			{
+				Point2d curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x] - Point2d(offsetX, offsetY);
+				drawCircle(res_input, curCenterPos, _circleDrawMode);
+			}
+		}
+	}
+	imwrite(picName, res_input);
+}
+
+void ConfidenceCompute::drawCircle(Mat &img, const Point2d &centerPos, CircleDrawMode _circleDrawMode)
+{
+	for (double angle = 0; angle < 360.0; angle += 1.0)
+	{
+		int index_y = int(centerPos.y - RADIUS*sin(angle / 180.0*PI) + 0.5);
+		int index_x = int(centerPos.x + RADIUS*cos(angle / 180.0*PI) + 0.5);
+
+		uchar *ydata = (uchar *)img.ptr<uchar>(index_y);
+		if (_circleDrawMode == CircleDrawMode::e_color)
+		{
+			ydata[3 * index_x] = 0; ydata[3 * index_x + 1] = 0; ydata[3 * index_x + 2] = 255;
+		}
+		else if (_circleDrawMode == CircleDrawMode::e_gray)
+			ydata[index_x] = 255;
+	}
+}
+
+void ConfidenceCompute::confidentMaskRepair(cv::Mat &confidentMat, const RawImageParameter &rawImageParameter,
+	const MicroImageParameter &microImageParameter)
+{//置信度图利用梯度圆做修复
+	int height = confidentMat.rows;
+	int width = confidentMat.cols;
+
+//#pragma omp parallel for
+	for (int py = 0; py < height; ++py)
+	{
+		uchar *pYMask = (uchar *)confidentMat.ptr<uchar>(py);
+		for (int px = 0; px < width; ++px)
+		{
+			int c_index = microImageParameter.m_ppPixelsMappingSet[py][px];
+			if (c_index > 0){
+				int cy = c_index / rawImageParameter.m_xLensNum;
+				int cx = c_index % rawImageParameter.m_xLensNum;
+
+				uchar *ydata = (uchar *)(*m_pGradientCircleMask).ptr<uchar>(cy);
+				if (ydata[cx] == 0)
+					pYMask[px] = 0;
+				//if (m_pGradientCircleMask->at<uchar>(cy, cx) == 0)
+					//pYMask[px] = 0;
+			}
+		}
+	}
 }
 
 
@@ -552,144 +625,3 @@ void ConfidenceCompute::confidenceMeasureCompute(
     lowTextureAreaPlot(rawImageParameter, microImageParameter, conftmp2, mask, confidentImgStoreName, CircleDrawMode::e_gray, true);
 }*/
 
-void ConfidenceCompute::setConfidentMask(cv::Mat &confidentMat, std::string confidentMaskName, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter)
-{//设置置信度的mask
-	m_pConfidentMask = new cv::Mat(confidentMat.rows, confidentMat.cols, CV_8UC1);
-
-	cv::threshold(confidentMat, *m_pConfidentMask, FINAL_CONFIDENT_MEASURE_THRES, 255, THRESH_BINARY);
-	confidentMaskRepair(*m_pConfidentMask, rawImageParameter, microImageParameter);
-	cv::imwrite(confidentMaskName, *m_pConfidentMask);
-
-	std::string storeName = m_folderPath + "/confidentMatMask.xml";
-	storeDispMapToXML(storeName, *m_pConfidentMask);
-}
-
-void ConfidenceCompute::confidentCircleJudge(cv::Mat &confidentMat, cv::Mat &mask, const RawImageParameter &rawImageParameter,
-	const MicroImageParameter &microImageParameter)
-{
-//#pragma omp parallel for
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		uchar *yRows = (uchar *)mask.ptr<uchar>(y);
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			if (!confidentCircleJudge(confidentMat, y, x, rawImageParameter, microImageParameter))
-				yRows[x] = 255;
-		}
-	}
-}
-
-bool ConfidenceCompute::confidentCircleJudge(cv::Mat &confidentMat, int y, int x, const RawImageParameter &rawImageParameter,
-	const MicroImageParameter &microImageParameter)
-{
-	Point2d &centerPos = microImageParameter.m_ppLensCenterPoints[y][x];
-	int curCenterIndex = y*rawImageParameter.m_xLensNum + x;
-	double sumCircle = 0.0, countPoints = 0;
-
-	for (int py = centerPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
-		py <= centerPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; py++)
-	{
-		for (int px = centerPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow; 
-			px <= centerPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow; px++)
-		{
-			uchar *yConf = confidentMat.ptr<uchar>(py - rawImageParameter.m_yPixelBeginOffset);
-
-			if (microImageParameter.m_ppPixelsMappingSet[py][px] == curCenterIndex){
-				sumCircle += yConf[px - rawImageParameter.m_xPixelBeginOffset];
-				countPoints += 1.0;
-			}
-		}
-	}
-
-	if (sumCircle / countPoints > MNN_CONFIDENT_MEASURE_THRES)
-		return true;
-	else
-		return false;
-}
-
-void ConfidenceCompute::drawConfidentCircle(cv::Mat *&costVol, cv::Mat &mask, const RawImageParameter &rawImageParameter,
-	const MicroImageParameter &microImageParameter, const DisparityParameter &disparityParameter, cv::Mat &srcImg)
-{
-	cv::Mat rawDisp = cv::Mat::zeros(rawImageParameter.m_recImgHeight, rawImageParameter.m_recImgWidth, CV_8UC1);
-	WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
-	double minVal, maxVal;
-	minMaxLoc(rawDisp, &minVal, &maxVal);
-	cv::Mat disp2;
-	rawDisp.convertTo(disp2, CV_8UC1, 255.0 / (maxVal - minVal), -minVal*255.0 / (maxVal - minVal));
-
-	cv::Mat inputImg;
-	srcImg.convertTo(inputImg, CV_8UC3);
-	//cv::cvtColor(inputImg, inputImg, CV_RGB2BGR);
-
-	std::string rawImgStoreName = m_folderPath + "/ori_circle.png";
-	lowTextureAreaPlot(rawImageParameter, microImageParameter, inputImg, mask, rawImgStoreName, CircleDrawMode::e_color, true);
-
-	std::string dispImgStoreName = m_folderPath + "/disp_circle.png";
-	lowTextureAreaPlot(rawImageParameter, microImageParameter, disp2, mask, dispImgStoreName, CircleDrawMode::e_gray, true);
-}
-
-void ConfidenceCompute::lowTextureAreaPlot(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter,
-	const Mat &img_input, const Mat &mask, const string &picName, CircleDrawMode _circleDrawMode, bool _isOffset)
-{
-	Mat res_input = img_input.clone();
-	int offsetY = _isOffset ? rawImageParameter.m_yPixelBeginOffset : 0;
-	int offsetX = _isOffset ? rawImageParameter.m_xPixelBeginOffset : 0;
-//#pragma omp parallel for
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		uchar *yRows = (uchar *)mask.ptr<uchar>(y);
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			if (yRows[x] > 125)
-			{
-				Point2d curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x] - Point2d(offsetX, offsetY);
-				drawCircle(res_input, curCenterPos, _circleDrawMode);
-			}
-		}
-	}
-	imwrite(picName, res_input);
-}
-
-void ConfidenceCompute::drawCircle(Mat &img, const Point2d &centerPos, CircleDrawMode _circleDrawMode)
-{
-	for (double angle = 0; angle < 360.0; angle += 1.0)
-	{
-		int index_y = int(centerPos.y - RADIUS*sin(angle / 180.0*PI) + 0.5);
-		int index_x = int(centerPos.x + RADIUS*cos(angle / 180.0*PI) + 0.5);
-
-		uchar *ydata = (uchar *)img.ptr<uchar>(index_y);
-		if (_circleDrawMode == CircleDrawMode::e_color)
-		{
-			ydata[3 * index_x] = 0; ydata[3 * index_x + 1] = 0; ydata[3 * index_x + 2] = 255;
-		}
-		else if (_circleDrawMode == CircleDrawMode::e_gray)
-			ydata[index_x] = 255;
-	}
-}
-
-void ConfidenceCompute::confidentMaskRepair(cv::Mat &confidentMat, const RawImageParameter &rawImageParameter,
-	const MicroImageParameter &microImageParameter)
-{//置信度图利用梯度圆做修复
-	int height = confidentMat.rows;
-	int width = confidentMat.cols;
-
-//#pragma omp parallel for
-	for (int py = 0; py < height; ++py)
-	{
-		uchar *pYMask = (uchar *)confidentMat.ptr<uchar>(py);
-		for (int px = 0; px < width; ++px)
-		{
-			int c_index = microImageParameter.m_ppPixelsMappingSet[py][px];
-			if (c_index > 0){
-				int cy = c_index / rawImageParameter.m_xLensNum;
-				int cx = c_index % rawImageParameter.m_xLensNum;
-
-				uchar *ydata = (uchar *)(*m_pGradientCircleMask).ptr<uchar>(cy);
-				if (ydata[cx] == 0)
-					pYMask[px] = 0;
-				//if (m_pGradientCircleMask->at<uchar>(cy, cx) == 0)
-					//pYMask[px] = 0;
-			}
-		}
-	}
-}

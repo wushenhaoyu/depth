@@ -1,5 +1,5 @@
 #include "SceneDepthCompute.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 #include <iomanip>
 
 using namespace cv;
@@ -17,7 +17,7 @@ SceneDepthCompute::~SceneDepthCompute()
 
 void SceneDepthCompute::loadSceneDataCost(const DataParameter &dataParameter, std::string referImgName, std::string referDispXmlName,
 	std::string referMaskXmlName, std::string mappingFileName)
-{//ÐÂµÄ¶ÔÓ¦ÊÓ²îµÄÔØÈë
+{//ï¿½ÂµÄ¶ï¿½Ó¦ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
@@ -103,7 +103,7 @@ void SceneDepthCompute::loadSceneDataCost(const DataParameter &dataParameter, st
 }
 
 void SceneDepthCompute::outputMicrolensDisp(const DataParameter &dataParameter, Mat &rawDisp, Mat *confidentMask)
-{//Êä³öÎ¢Í¸¾µÍ¼ÏñÖÐÆ½¾ùÊÓ²îÎÄ¼þ
+{//ï¿½ï¿½ï¿½Î¢Í¸ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½Ó²ï¿½ï¿½Ä¼ï¿½
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
@@ -169,7 +169,7 @@ float SceneDepthCompute::getSmoothValue(const RawImageParameter &rawImageParamet
 
 void SceneDepthCompute::loadSceneDataCost(const DataParameter &dataParameter, cv::Mat &subApertureImg, std::string mappingFileName,
 	cv::Mat *srcCostVol, cv::Mat *destCostVol)
-{//ÐÂµÄ¶ÔÓ¦ÊÓ²îµÄÔØÈë
+{//ï¿½ÂµÄ¶ï¿½Ó¦ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
 	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
 
@@ -210,7 +210,7 @@ void SceneDepthCompute::loadSceneDataCost(const DataParameter &dataParameter, cv
 }
 
 void SceneDepthCompute::fillOtherCostVol(int height, int width, int maxDis, Mat* &costVol)
-{//¶ÔÒ»Ð©Ã»ÓÐcostµÄÖµ¾ÍÐÐÌî²¹
+{//ï¿½ï¿½Ò»Ð©Ã»ï¿½ï¿½costï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½î²¹
 	double minVal, maxVal = 0.0, tempMaxVal;
 	for (int i = 0; i < maxDis; i++)
 	{

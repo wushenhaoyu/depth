@@ -10,11 +10,6 @@ using namespace std;
 
 
 
-void demo1()
-{
-	ToolOneTestDemo toolOneTestDemo;
-	toolOneTestDemo.data1compute();
-}
 
 void demo2()
 {

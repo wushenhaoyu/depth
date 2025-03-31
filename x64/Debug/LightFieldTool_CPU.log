@@ -1,8 +1,8 @@
 ﻿D:\vs2022\community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(1116,5): warning MSB8027: 名为 ctmf.c 的两个或更多文件将生成到同一位置的输出。这会导致错误的生成结果。   调用的文件是 CANLC\ctmf.c, CAST\ctmf.c。
   ToolTwoTestDemo.cpp
-F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.h(24,18): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.h(25,18): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.h(26,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.cuh(24,18): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.cuh(25,18): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\DataParameter.cuh(26,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
 F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\ToolTwoTestDemo.cpp(99,17): warning C4305: “初始化”: 从“double”到“float”截断
 F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\ToolTwoTestDemo.cpp(143,17): warning C4305: “初始化”: 从“double”到“float”截断
 F:\work\lightfield\LightFieldTool_CPU_2\LightFieldTool_CPU\ToolTwoTestDemo.cpp(185,17): warning C4305: “初始化”: 从“double”到“float”截断

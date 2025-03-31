@@ -61,7 +61,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	//rawDisp.setTo(5);//��ʱ�趨Ϊ�̶�ֵ��ȡ������ļ������
 	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);//����
 	storeName = m_dataParameter.m_folderPath + "/dispBeforeFilter.png";
-	dataDeal.dispMapShow(storeName, rawDisp);//����
+	//dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp before filter final!" << std::endl;
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -75,7 +75,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	//std::cout << "init raw cost vol filter use time: " << (t2 - t1) / CLOCKS_PER_SEC << " seconds " << std::endl;
 	dataDeal.WTAMatch(costVol, rawDisp, disparityParameter.m_disNum);
 	storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
-	dataDeal.dispMapShow(storeName, rawDisp);//����
+	//dataDeal.dispMapShow(storeName, rawDisp);//����
 	std::cout << "disp_afterFilter final!" << std::endl;
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -107,26 +107,26 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 */
 
 //	/*����
-	ConfidenceCompute confidenceCompute;
+	/*ConfidenceCompute confidenceCompute;
 	start = std::chrono::high_resolution_clock::now();
 	confidenceCompute.confidenceMeasureCompute(m_dataParameter, costVol);
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "confident measure compute use time: " << duration << " ms" << std::endl;
 	outfile << "confident measure compute use time: " << duration << " ms \n";
-	cv::Mat *pConfidentMask = confidenceCompute.getConfidentMask();
+	cv::Mat *pConfidentMask = confidenceCompute.getConfidentMask();*/
 	
-	start = std::chrono::high_resolution_clock::now();
+	/*start = std::chrono::high_resolution_clock::now();
 	SceneDepthCompute sceneDepthCompute;
 	sceneDepthCompute.outputMicrolensDisp(m_dataParameter, rawDisp, pConfidentMask);
-//	*/end = std::chrono::high_resolution_clock::now();
+	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	std::cout << "sence depth compute use time: " << duration << " ms" << std::endl;
+	std::cout << "sence depth compute use time: " << duration << " ms" << std::endl;*/
 
 	ImageRander imageRander;
 	start = std::chrono::high_resolution_clock::now();
-	imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
-//	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
+	//imageRander.imageRanderWithMask(m_dataParameter, rawDisp, pConfidentMask);
+	imageRander.imageRanderWithOutMask(m_dataParameter, rawDisp);
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "sub aperature rander use time: " << duration << " ms " << std::endl;

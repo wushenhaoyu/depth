@@ -39,7 +39,7 @@
     <ClInclude Include="DataDeal.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DataParameter.h">
+    <ClInclude Include="DataParameter.cuh">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DepthComputeToolOne.h">

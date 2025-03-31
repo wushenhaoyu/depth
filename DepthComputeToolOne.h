@@ -1,17 +1,17 @@
 /*!
  * \class DepthComputeToolOne
  *
- * \brief 深度计算调用不同模块示例演示，对应方法一
+ * \brief 锟斤拷燃锟斤拷锟斤拷锟矫诧拷同模锟斤拷示锟斤拷锟斤拷示锟斤拷锟斤拷应锟斤拷锟斤拷一
  *
  * \author liuqian
- * \date 一月 2018
+ * \date 一锟斤拷 2018
  */
 
 #ifndef _DEPTHCOMPUTETOOLONE_H_
 #define _DEPTHCOMPUTETOOLONE_H_
 
 #include "CommFunc.h"
-#include "DataParameter.h"
+#include "DataParameter.cuh"
 
 class DepthComputeToolOne
 {

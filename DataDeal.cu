@@ -1,5 +1,5 @@
 #include "DataDeal.h"
-
+#include "DataParameter.cuh"
 using namespace std;
 using namespace cv;
 
@@ -48,83 +48,80 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
-__global__ void WTAMatchKernel(
-    const float* costVol,
-    uchar* disMap,
-    int width,
-    int height,
-    int maxDis
-) {
+__global__ void wtamatchKernel()
+{
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int height = d_rawImageParameter.m_recImgHeight;
+    int width = d_rawImageParameter.m_recImgWidth;
 
-    if (x >= width || y >= height) return;
+    if (x < width && y < height)
+    {
+        float minCost = d_fltMax;
+        float minDis = 0;
+        for (int d = 1; d < d_disparityParameter.m_dispMax; d++) {
+			
+			int costIdx = (d- 1) * width * height + y * width + x;
 
-    float minCost = FLT_MAX;
-    int minDis = 0;
+			if (costIdx >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
+				//printf("x:%d y:%d d:%d costIdx:%d\n", x, y, d, costIdx);
+				return;
+			}
+            float* costData = &d_costVol[costIdx];
+            if (*costData * 1000000.0f < 0.01f)
+                continue;
 
-    for (int d = 1; d < maxDis; d++) {
-        int costIdx = (d - 1) * width * height + y * width + x;
-        float cost = costVol[costIdx];
-
-        if (cost * 1000000.0 < 0.01)
-            continue;
-
-        if (cost < minCost) {
-            if (cost <= 0.0001) {
-                minCost = -10;
-                minDis = 1;
-            } else {
-                minCost = cost;
-                minDis = d;
+            if (*costData < minCost) {
+                if (*costData <= 0.0001f) {
+                    minCost = -10.0f;
+                    minDis = 1;
+                } else {
+                    minCost = costData[0];
+                    minDis = d;
+                }
             }
         }
+		int disIdx = y * width + x;
+        d_rawDisp[disIdx] = minDis;
     }
-
-    int disIdx = y * width + x;
-    disMap[disIdx] = minDis;
 }
 
 
 void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
-{//���Ӳ�dataCost�����еõ��Ӳ����ݣ���WTA�㷨
-int width = disMap.cols;
+{
+    int width = disMap.cols;
     int height = disMap.rows;
 
-    // 将 costVol 和 disMap 转换为连续的数组格式
-    int costVolSize = maxDis * width * height * sizeof(float);
-    int disMapSize = width * height * sizeof(uchar);
+    dim3 blockSize(8, 8);  // 每个线程块 16x16
+	dim3 gridSize((height  + blockSize.x - 1) / blockSize.x, (width + blockSize.y - 1) / blockSize.y);
 
-    float* d_costVol;
-    uchar* d_disMap;
+    // 创建 CUDA 事件
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    // 启动 CUDA 核函数
+    cudaEventRecord(start); // 记录开始时间
+    wtamatchKernel<<<gridSize, blockSize>>>();
+    cudaEventRecord(stop);  // 记录结束时间
 
-    // 分配设备内存
-    cudaMalloc(&d_costVol, costVolSize);
-    cudaMalloc(&d_disMap, disMapSize);
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    // 计算运行时间
+    float milliseconds = 0;
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
-    // 将数据从主机内存复制到设备内存
-    for (int d = 0; d < maxDis; d++) {
-        cudaMemcpy(d_costVol + d * width * height, costVol[d].data, width * height * sizeof(float), cudaMemcpyHostToDevice);
-    }
-    cudaMemset(d_disMap, 0, disMapSize);
+    // 打印运行时间
+    std::cout << "CUDA kernel execution time: " << milliseconds << " ms" << std::endl;
 
-    // 计算线程块和网格大小
-    dim3 blockSize(16, 16);
-    dim3 gridSize((width + 15) / 16, (height + 15) / 16);
 
-    // 调用 CUDA 内核函数
-    WTAMatchKernel<<<gridSize, blockSize>>>(d_costVol, d_disMap, width, height, maxDis);
-    cudaDeviceSynchronize();
+    // 销毁 CUDA 事件
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
-    // 将结果从设备内存复制回主机内存
-    cudaMemcpy(disMap.data, d_disMap, disMapSize, cudaMemcpyDeviceToHost);
+    std::cout << "MatchTest over!" << std::endl;
 
-    // 释放设备内存
-    cudaFree(d_costVol);
-    cudaFree(d_disMap);
-
-    cout << "MatchTest over!" << endl;
-
+	
 }
 
 void DataDeal::dispMapShow(std::string dispImgName, const cv::Mat &disMap)
