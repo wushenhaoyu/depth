@@ -178,12 +178,7 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
 
     // 打印运行时间
     std::cout << "CUDA kernel execution time: " << milliseconds << " ms" << std::endl;
-    if (d_ppLensMeanDisp == nullptr) {
-        printf("d_ppLensMeanDisp is NULL\n");
-    }
-    else{
-        printf("d_ppLensMeanDisp is not NULL\n");
-    }
+
     // 销毁 CUDA 事件
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

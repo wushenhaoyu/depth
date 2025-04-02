@@ -29,182 +29,218 @@ struct CudaPoint2f {
     __device__ __host__ CudaPoint2f(float x, float y) : x(x), y(y) {}
 };
 
-// CUDA 内核：RGB 转灰度图
-__global__ void rgbToGrayKernel(int width, int height, int channels) {
+// CUDA 内核函数：将图像从 RGB 转换为灰度
+__global__ void rgbToGrayKernel(int width, int height) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int idx = y * width * 3 + x * 3;
+    float r = d_inputImg[idx];
+    float g = d_inputImg[idx + 1];
+    float b = d_inputImg[idx + 2];
+    //printf("%f %f %f\n", r, g, b);
+    d_grayImg[y * width + x] = 0.299f * r + 0.587f * g + 0.114f * b;
+    //printf("%f\n", d_grayImg[y * width + x]);
+}
+
+// CUDA 内核函数：计算 Sobel 梯度
+__global__ void sobelKernel( int width, int height) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= width || y >= height) return;
 
     int idx = y * width + x;
-    float r = d_inputImg[idx * channels + 0];
-    float g = d_inputImg[idx * channels + 1];
-    float b = d_inputImg[idx * channels + 2];
-    d_grayImg[idx] = 0.299f * r + 0.587f * g + 0.114f * b;
+
+    // 获取相邻像素
+    float gx = -d_grayImg[(y - 1) * width + (x - 1)] - 2 * d_grayImg[y * width + (x - 1)] - d_grayImg[(y + 1) * width + (x - 1)]
+               + d_grayImg[(y - 1) * width + (x + 1)] + 2 * d_grayImg[y * width + (x + 1)] + d_grayImg[(y + 1) * width + (x + 1)];
+
+    float gy = -d_grayImg[(y - 1) * width + (x - 1)] - d_grayImg[(y - 1) * width + x] - d_grayImg[(y - 1) * width + (x + 1)]
+               + d_grayImg[(y + 1) * width + (x - 1)] + d_grayImg[(y + 1) * width + x] + d_grayImg[(y + 1) * width + (x + 1)];
+
+    // 计算 Sobel 边缘响应
+    d_gradImg[idx] = sqrtf(gx * gx + gy * gy) + 0.5;
 }
 
-// CUDA 内核：计算梯度图
-__global__ void computeGradientKernel(int width, int height) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x >= width || y >= height) return;
-
-    int idx = y * width + x;
-    float gradX = 0.0f, gradY = 0.0f;
-
-    if (x > 0 && x < width - 1) {
-        gradX = d_grayImg[idx + 1] - d_grayImg[idx - 1];
+__device__ float myCostGrd(const float* lC, const float* rC, const float* lG, const float* rG) {
+    float clrDiff = 0.0f;
+    for (int c = 0; c < 3; c++) {
+        float temp = fabsf(lC[c] - rC[c]);
+        clrDiff += temp;
     }
-    if (y > 0 && y < height - 1) {
-        gradY = d_grayImg[idx + width] - d_grayImg[idx - width];
-    }
+    clrDiff *= 0.3333333333f;
 
-    d_gradImg[idx] = sqrtf(gradX * gradX + gradY * gradY);
+    float grdDiff = fabsf(lG[0] - rG[0]);
+
+    return clrDiff + grdDiff;
 }
 
-// CUDA 内核：计算成本体积
-__global__ void computeCostVolKernel(
-    int width, int height, int channels,
-    int NEIGHBOR_MATCH_LENS_NUM_) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+__global__ void costVolDataComputeKernel() {
+    int y = blockIdx.y * blockDim.y + threadIdx.y + d_rawImageParameter.m_yCenterBeginOffset;
+    int x = blockIdx.x * blockDim.x + threadIdx.x + d_rawImageParameter.m_xCenterBeginOffset;
 
-    if (x >= width || y >= height) return;
+    // 检查是否超出范围
+    if (y >= d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset ||
+        x >= d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset) {
+        return;
+    }
 
-    int curCenterIndex = (y / d_microImageParameter.m_circleDiameter) * d_rawImageParameter.m_xLensNum + (x / d_microImageParameter.m_circleDiameter);
-    int py = y - d_rawImageParameter.m_yPixelBeginOffset;
-    int px = x - d_rawImageParameter.m_xPixelBeginOffset;
+    // 计算一维索引
+    int index = y * d_rawImageParameter.m_xLensNum + x;
 
-    if (d_microImageParameter.m_ppPixelsMappingSet[py * width + px] != curCenterIndex) return;
+    CudaPoint2f centerPos = CudaPoint2f(d_microImageParameter.m_ppLensCenterPoints[index].x, d_microImageParameter.m_ppLensCenterPoints[index].y);
+    int curCenterIndex = index;
 
-    const Point2d centerPos = d_microImageParameter.m_ppLensCenterPoints[curCenterIndex];
-    const MatchNeighborLens* matchNeighborLens = &d_microImageParameter.m_ppMatchNeighborLens[curCenterIndex * NEIGHBOR_MATCH_LENS_NUM_];
+    for (int py = centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow; 
+         py <= centerPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow; py++) {
+        for (int px = centerPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow; 
+             px <= centerPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow; px++) {
+            int pyxIndex = py * d_rawImageParameter.m_xLensNum + px;
+            if (d_microImageParameter.m_ppPixelsMappingSet[pyxIndex] == curCenterIndex) {
+                for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
+                    float tempSumCost = 0.0f;
+                    int tempCostNum = 0;
 
-    for (int d = 0; d < d_disparityParameter.m_disNum ; d++) {
-        float realDisp = d_disparityParameter.m_dispStep * d + d_disparityParameter.m_dispMin;
-        float tempSumCost = 0.0f;
-        int tempCostNum = 0;
+                    CudaPoint2f curPoint = CudaPoint2f(px, py);
+                    CudaPoint2f matchPoint = CudaPoint2f(0.0f, 0.0f);
+                    float realDisp = d_disparityParameter.m_dispStep * d + d_disparityParameter.m_dispMin;
+                    MatchNeighborLens* matchNeighborLens = &d_microImageParameter.m_ppMatchNeighborLens[index];
 
-        for (int i = 0; i < NEIGHBOR_MATCH_LENS_NUM_; i++) {
-            float matchCenterPos_y = matchNeighborLens[i].m_centerPosY;
-            float matchCenterPos_x = matchNeighborLens[i].m_centerPosX;
-            float centerDis = matchNeighborLens[i].m_centerDis;
+                    for (int i = 0; i < NEIGHBOR_MATCH_LENS_NUM; i++) {
+                        float matchCenterPos_y = matchNeighborLens[i].m_centerPosY;
+                        float matchCenterPos_x = matchNeighborLens[i].m_centerPosX;
+                        float centerDis = matchNeighborLens[i].m_centerDis;
 
-            if (matchCenterPos_y < 0) break;
+                        if (matchCenterPos_y < 0) break;
 
-            float2 matchPoint;
-            matchPoint.y = (centerDis + realDisp) * (matchCenterPos_y - centerPos.y) / centerDis + py;
-            matchPoint.x = (centerDis + realDisp) * (matchCenterPos_x - centerPos.x) / centerDis + px;
+                        matchPoint.y = (centerDis + realDisp) * (matchCenterPos_y - centerPos.y) / centerDis + py;
+                        matchPoint.x = (centerDis + realDisp) * (matchCenterPos_x - centerPos.x) / centerDis + px;
+                        int matchCenterIndex = matchNeighborLens[i].m_centerIndex;
 
-            if (matchPoint.y < 0 || matchPoint.y >= height || matchPoint.x < 0 || matchPoint.x >= width) continue;
+                        if (matchPoint.y < 0 || matchPoint.y >= d_rawImageParameter.m_srcImgHeight ||
+                            matchPoint.x < 0 || matchPoint.x >= d_rawImageParameter.m_srcImgWidth ||
+                            d_microImageParameter.m_ppPixelsMappingSet[int(matchPoint.y) * d_rawImageParameter.m_xLensNum + int(matchPoint.x)] != matchCenterIndex) continue;
 
-            int matchCenterIndex = matchNeighborLens[i].m_centerIndex;
-            if (d_microImageParameter.m_ppPixelsMappingSet[int(matchPoint.y) * width + int(matchPoint.x)] != matchCenterIndex) continue;
-            
-            float cost = 0.0f;
-            if (int(matchPoint.y) == matchPoint.y && int(matchPoint.x) == matchPoint.x) {
-                
-                const float* curRGB = &d_inputImg[(y * width + x) * channels];
-                const float curGrad = d_gradImg[y * width + x];
-                const float* matchRGB = &d_inputImg[(int(matchPoint.y) * width + int(matchPoint.x)) * channels];
-                const float matchGrad = d_gradImg[int(matchPoint.y) * width + int(matchPoint.x)];
+                        float* lC = d_inputImg + py * d_rawImageParameter.m_srcImgWidth * 3 + px * 3;
+                        float* lG = d_gradImg + py * d_rawImageParameter.m_srcImgWidth + px;
 
-                float clrDiff = 0.0f;
-                for (int c = 0; c < channels; c++) {
-                    clrDiff += fabs(curRGB[c] - matchRGB[c]);
+                        if (int(matchPoint.y) == matchPoint.y && int(matchPoint.x) == matchPoint.x) {
+                            float* rC = d_inputImg + int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth * 3 + int(matchPoint.x) * 3;
+                            float* rG = d_gradImg + int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth + int(matchPoint.x);
+                            tempSumCost += myCostGrd(lC, rC, lG, rG);
+                        } else {
+                            int tempRx = int(matchPoint.x), tempRy = int(matchPoint.y);
+                            double alphaX = matchPoint.x - tempRx, alphaY = matchPoint.y - tempRy;
+
+                            float tempRc[3], tempRg;
+                            float* rgb_y1 = d_inputImg + tempRy * d_rawImageParameter.m_srcImgWidth * 3;
+                            float* rgb_y2 = d_inputImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth * 3;
+                            for (int i = 0; i < 3; i++) {
+                                tempRc[i] = (1 - alphaX) * (1 - alphaY) * rgb_y1[tempRx * 3 + i] +
+                                            alphaX * (1 - alphaY) * rgb_y1[(tempRx + 1) * 3 + i] +
+                                            (1 - alphaX) * alphaY * rgb_y2[tempRx * 3 + i] +
+                                            alphaX * alphaY * rgb_y2[(tempRx + 1) * 3 + i];
+                            }
+
+                            float* grd_y1 = d_gradImg + tempRy * d_rawImageParameter.m_srcImgWidth;
+                            float* grd_y2 = d_gradImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth;
+                            tempRg = (1 - alphaX) * (1 - alphaY) * grd_y1[tempRx] +
+                                     alphaX * (1 - alphaY) * grd_y1[tempRx + 1] +
+                                     (1 - alphaX) * alphaY * grd_y2[tempRx] +
+                                     alphaX * alphaY * grd_y2[tempRx + 1];
+
+                            float* rC = tempRc;
+                            float* rG = &tempRg;
+                            tempSumCost += myCostGrd(lC, rC, lG, rG);
+                        }
+                        tempCostNum++;
+                    }
+
+                    if (tempCostNum != 0) {
+                        tempSumCost /= tempCostNum;
+                    }
+
+                    int costVolIndex = d * d_rawImageParameter.m_srcImgHeight * d_rawImageParameter.m_srcImgWidth +
+                                       (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_srcImgWidth +
+                                       (px - d_rawImageParameter.m_xPixelBeginOffset);
+
+                    printf("costVolIndex: %d, d: %d, py: %d, px: %d, value:%f \n", costVolIndex, d, py, px,tempSumCost);
+                    d_costVol[costVolIndex] = tempSumCost;
                 }
-                clrDiff *= (1.0f / channels);
-                float grdDiff = fabs(curGrad - matchGrad);
-                cost = grdDiff;
-            } else {
-                int tempRx = int(matchPoint.x), tempRy = int(matchPoint.y);
-                double alphaX = matchPoint.x - tempRx, alphaY = matchPoint.y - tempRy;
-
-                float tempRc[3];
-                const float* rgb_y1 = &d_inputImg[(tempRy * width + tempRx) * channels];
-                const float* rgb_y2 = &d_inputImg[((tempRy + 1) * width + tempRx) * channels];
-
-                for (int i = 0; i < channels; i++) {
-                    tempRc[i] = (1 - alphaX) * (1 - alphaY) * rgb_y1[i] +
-                                alphaX * (1 - alphaY) * rgb_y1[i + channels] +
-                                (1 - alphaX) * alphaY * rgb_y2[i] +
-                                alphaX * alphaY * rgb_y2[i + channels];
-                }
-
-                const float* grd_y1 = &d_gradImg[tempRy * width + tempRx];
-                const float* grd_y2 = &d_gradImg[(tempRy + 1) * width + tempRx];
-                float tempRg = (1 - alphaX) * (1 - alphaY) * grd_y1[0] +
-                               alphaX * (1 - alphaY) * grd_y1[1] +
-                               (1 - alphaX) * alphaY * grd_y2[0] +
-                               alphaX * alphaY * grd_y2[1];
-
-                const float* curRGB = &d_inputImg[(y * width + x) * channels];
-                const float curGrad = d_gradImg[y * width + x];
-
-                float clrDiff = 0.0f;
-                for (int c = 0; c < channels; c++) {
-                    clrDiff += fabs(curRGB[c] - tempRc[c]);
-                }
-                clrDiff *= (1.0f / channels);
-                float grdDiff = fabs(curGrad - tempRg);
-                cost = grdDiff;
             }
-
-            tempSumCost += cost;
-            tempCostNum++;
         }
-
-        if (tempCostNum > 0) {
-            tempSumCost /= tempCostNum;
-        }
-        
-        int costVolIndex = (py * width + px) * d_disparityParameter.m_disNum + d;
-        if (costVolIndex >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
-            //printf("x:%d y:%d d:%d costVolIndex:%d\n", x, y, d, costVolIndex);
-            return;
-        }
-        d_costVol[costVolIndex] = tempSumCost;
     }
 }
 
-// 主函数：计算成本体积
-void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, cv::Mat *costVol) {
+
+
+// CUDA 加速版本的 costVolDataCompute 函数
+void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat *costVol)  {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
     MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
     DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
 
-    int width = rawImageParameter.m_srcImgWidth;
-    int height = rawImageParameter.m_srcImgHeight;
-    int channels = 3; // 假设输入图像为 RGB
-    int disparityNum = disparityParameter.m_disNum;
 
 
-
-    // 将输入图像数据从主机内存复制到设备内存
-
-    // 配置线程块和网格大小
+    // 计算CUDA网格和块的大小
     dim3 blockSize(32, 32);
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+    dim3 gridSize((rawImageParameter.m_srcImgWidth + blockSize.x - 1) / blockSize.x,
+                  (rawImageParameter.m_srcImgHeight + blockSize.y - 1) / blockSize.y);
 
-    // 启动 CUDA 内核：RGB 转灰度图
-    rgbToGrayKernel<<<gridSize, blockSize>>>(width, height, channels);
+    /*float* d_data_ptr;
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_inputImg, sizeof(float*)));
+    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * 3];
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * 3 * sizeof(float), cudaMemcpyDeviceToHost));
+    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC3, h_data);
+    cv::Mat scaledImage;
+    image.convertTo(scaledImage, CV_8UC3, 255.0);
+    cv::imwrite("input.bmp", scaledImage);
+    delete[] h_data;*/
+
+    // 调用CUDA内核函数：将图像从RGB转换为灰度
+    rgbToGrayKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    /*float* d_data_ptr;
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_grayImg, sizeof(float*)));
+    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
+    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
+    cv::Mat scaledImage;
+    cv::normalize(image, scaledImage, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    cv::imwrite("gray.png", scaledImage);
+    delete[] h_data;*/
+
+
+    // 调用CUDA内核函数：计算Sobel梯度
+    sobelKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    // 启动 CUDA 内核：计算梯度图
-    computeGradientKernel<<<gridSize, blockSize>>>(width, height);
+    float* d_data_ptr;
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_gradImg, sizeof(float*)));
+    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
+    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
+    cv::Mat scaledImage;
+    cv::normalize(image, scaledImage, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    cv::imwrite("grad.png", scaledImage);
+    delete[] h_data;
+
+    blockSize = dim3 (32, 32);
+    gridSize = dim3 (
+        (rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterBeginOffset - rawImageParameter.m_xCenterEndOffset + blockSize.x - 1) / blockSize.x,
+        (rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterBeginOffset - rawImageParameter.m_yCenterEndOffset + blockSize.y - 1) / blockSize.y
+    );
+
+    // 调用 CUDA 内核函数
+    costVolDataComputeKernel<<<gridSize, blockSize>>>();
+
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
-
-    // 启动 CUDA 内核：计算成本体积
-    computeCostVolKernel<<<gridSize, blockSize>>>(
-        width, height, channels,
-        NEIGHBOR_MATCH_LENS_NUM);
-
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
-
 
 
 }

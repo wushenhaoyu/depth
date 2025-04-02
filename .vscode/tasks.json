@@ -11,7 +11,7 @@
                 "-o",
                 "${workspaceFolder}/bin/main",
                 "${workspaceFolder}/main.cu",
-                "${workspaceFolder}/ConfidenceCompute.cu",
+                //"${workspaceFolder}/ConfidenceCompute.cu",
                 //"${workspaceFolder}/ToolOneTestDemo.cpp",
                 "${workspaceFolder}/ToolTwoTestDemo.cpp",
                 "${workspaceFolder}/CostVolCompute.cu",

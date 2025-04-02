@@ -1,0 +1,30 @@
+========= COMPUTE-SANITIZER
+========= Program hit cudaErrorInvalidSymbol (error 13) due to "invalid device symbol" on CUDA API call to cudaMemcpyFromSymbol.
+=========     Saved host backtrace up to driver entry point at error
+=========     Host Frame: [0x38fb47]
+=========                in /usr/lib/aarch64-linux-gnu/nvidia/libcuda.so.1
+=========     Host Frame:cudaMemcpyFromSymbol [0x7c10b]
+=========                in /usr/local/cuda/lib64/libcudart.so.12
+=========     Host Frame:cudaError cudaMemcpyFromSymbol<float const*>(void*, float const* const&, unsigned long, unsigned long, cudaMemcpyKind) in /usr/local/cuda/include/cuda_runtime.h:990 [0x1aa0f]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:saveThreeChannelGpuMemoryAsImage(float const*, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) in /home/jetson/Desktop/depth/DataParameter.cu:230 [0x174af]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:CostVolCompute::costVolDataCompute(DataParameter const&, cv::Mat*) in /home/jetson/Desktop/depth/CostVolCompute.cu:192 [0x7933]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:DepthComputeToolTwo::rawImageDisparityCompute() in /home/jetson/Desktop/depth/DepthComputeToolTwo.cu:44 [0xa753]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:ToolTwoTestDemo::data5compute() in /home/jetson/Desktop/depth/ToolTwoTestDemo.cpp:255 [0x6567]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:demo2() in /home/jetson/Desktop/depth/main.cu:17 [0x543f]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:main in /home/jetson/Desktop/depth/main.cu:33 [0x5527]
+=========                in /home/jetson/Desktop/depth/bin/main
+=========     Host Frame:__libc_start_call_main in ../sysdeps/nptl/libc_start_call_main.h:58 [0x273fb]
+=========                in /lib/aarch64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main in ../csu/libc-start.c:392 [0x274cb]
+=========                in /lib/aarch64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x4eaf]
+=========                in /home/jetson/Desktop/depth/bin/main
+========= 
+========= Target application returned an error
+========= ERROR SUMMARY: 1 error

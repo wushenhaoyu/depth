@@ -87,10 +87,8 @@ __global__ void wtamatchKernel()
 }
 
 
-void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
+void DataDeal::WTAMatch(int width,int height, int maxDis)
 {
-    int width = disMap.cols;
-    int height = disMap.rows;
 
     dim3 blockSize(8, 8);  // 每个线程块 16x16
 	dim3 gridSize((height  + blockSize.x - 1) / blockSize.x, (width + blockSize.y - 1) / blockSize.y);
@@ -110,10 +108,6 @@ void DataDeal::WTAMatch(cv::Mat *&costVol, cv::Mat &disMap, int maxDis)
     float milliseconds = 0;
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&milliseconds, start, stop);
-
-    // 打印运行时间
-    std::cout << "CUDA kernel execution time: " << milliseconds << " ms" << std::endl;
-
 
     // 销毁 CUDA 事件
     cudaEventDestroy(start);

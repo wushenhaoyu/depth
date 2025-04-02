@@ -40,7 +40,7 @@
 	 ~ImageRander();
  
 	 void imageRanderWithMask(const DataParameter &dataParameter, cv::Mat &rawDisp, cv::Mat *confidentMask);//�Դ����Ŷ�mask����������ӿ׾���Ⱦ
-	 void imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp);//��û�����Ŷ�mask����������ӿ׾���Ⱦ
+	 void imageRanderWithOutMask(const DataParameter &dataParameter);//��û�����Ŷ�mask����������ӿ׾���Ⱦ
  private:
 	 void imageRander(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, float *d_randerImg);
  //void imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg);

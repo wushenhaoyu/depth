@@ -29,44 +29,9 @@ __constant__ float d_randerScale;
 __constant__ int d_destWidth;
 __constant__ int d_destHeight;
 
-__global__ void testKernel() {
-    int x = threadIdx.x + blockIdx.x * blockDim.x;
-    int y = threadIdx.y + blockIdx.y * blockDim.y;
-
-    // 在一个特定的索引位置修改 d_ppLensMeanDisp
-   // printf("m_xLensNum = %d, m_yLensNum = %d\n", d_rawImageParameter.m_xLensNum, d_rawImageParameter.m_yLensNum);
-    
-    
-    if (x < d_rawImageParameter.m_xLensNum && y < d_rawImageParameter.m_yLensNum) {
-        int index = y * d_rawImageParameter.m_xLensNum + x;
-        if (index == 0) {  
-			if (d_ppLensMeanDisp == nullptr) {
-				printf("d_ppLensMeanDisp is NULL\n");
-			}
-			else{
-				printf("d_ppLensMeanDisp is not NULL\n");
-			}
-            d_ppLensMeanDisp[index] = 0;  
-        }
-    }
-}
 
 
 
-__global__ void testAssignAndPrintKernel()
-{
-    // 每个线程对全局变量赋值
-    *d_sx_begin = 10;
-    *d_sy_begin = 20;
-    *d_sx_end = 30;
-    *d_sy_end = 40;
-
-    // 打印全局变量的值
-    printf("d_sx_begin: %d\n", *d_sx_begin);
-    printf("d_sy_begin: %d\n", *d_sy_begin);
-    printf("d_sx_end: %d\n", *d_sx_end);
-    printf("d_sy_end: %d\n", *d_sy_end);
-}
 
 void DataParameter::mapToGPU() {
     // 复制常量变量
@@ -93,9 +58,11 @@ void DataParameter::mapToGPU() {
     CUDA_CHECK(cudaMalloc((void**)&h_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_costVol, &h_costVol, sizeof(float*)));
 
-    float* h_rawDisp;
-    CUDA_CHECK(cudaMalloc((void**)&h_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_rawDisp, &h_rawDisp, sizeof(float*)));
+	float* h_rawDisp;
+	CUDA_CHECK(cudaMalloc((void**)&h_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
+	CUDA_CHECK(cudaMemcpyToSymbol(d_rawDisp, &h_rawDisp, sizeof(float*)));
+	// 初始化为0
+	CUDA_CHECK(cudaMemset(h_rawDisp, 0, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
 	
 
     float* h_ppLensMeanDisp;
@@ -217,33 +184,94 @@ int sizeOfFloat = (int)sizeof(float);
 	
 }
 
-void DataParameter::UpdateImgToGPU()
-{
-    // 确保输入图像和裁剪后的图像是连续的
-    cv::Mat inputImgContinuous = m_inputImg.isContinuous() ? m_inputImg : m_inputImg.clone();
-    cv::Mat inputImgRecContinuous = m_inputImgRec.isContinuous() ? m_inputImgRec : m_inputImgRec.clone();
+__global__ void normalizeImageKernel(float* d_img, size_t width, size_t height, int channels) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    // 计算图像的字节大小
-    size_t inputImgSize = inputImgContinuous.total() * inputImgContinuous.elemSize();
-    size_t inputImgRecSize = inputImgRecContinuous.total() * inputImgRecContinuous.elemSize();
-
-    // 为输入图像分配内存
-	CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
-
-	// 为裁剪后的图像分配内存
-	CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
-
-    // 将输入图像数据从主机复制到设备
-    CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgContinuous.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
-
-    // 将裁剪后的图像数据从主机复制到设备
-    CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecContinuous.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
-
-    // 将设备指针复制到 __device__ 变量
-    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImg, &d_inputImg, sizeof(float*)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImgRec, &d_inputImgRec, sizeof(float*)));
+    // 确保线程在图像范围内
+    if (x < width && y < height) {
+        for (int c = 0; c < channels; ++c) {
+            int idx = (y * width + x) * channels + c;
+            d_img[idx] /= 255.0f;
+        }
+    }
 }
-	
+
+void DataParameter::UpdateImgToGPU() {
+    // 将图像从 CV_8UC3 转换为 CV_32FC3
+    cv::Mat inputImgFloat, inputImgRecFloat;
+    m_inputImg.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+    m_inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+
+    // 计算图像数据大小
+    size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
+    size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+
+    float* d_inputImgPtr;
+    float* d_inputImgRecPtr;
+
+    // 分配 GPU 内存
+    CUDA_CHECK(cudaMalloc((void**)&d_inputImgPtr, inputImgSize));
+    CUDA_CHECK(cudaMalloc((void**)&d_inputImgRecPtr, inputImgRecSize));
+
+    // 将图像数据从主机复制到设备
+    CUDA_CHECK(cudaMemcpy(d_inputImgPtr, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_inputImgRecPtr, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+
+    // 更新设备全局变量指针
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImg, &d_inputImgPtr, sizeof(float*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_inputImgRec, &d_inputImgRecPtr, sizeof(float*)));
+
+
+}
+
+
+void saveThreeChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename) {
+	float* d_data_ptr;
+
+    // **先获取 `__device__` 变量的值，即它存储的 GPU 指针地址**
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_data, sizeof(float*)));
+
+	float* h_data = new float[width * height * 3];
+
+    // ✅ 直接从 `d_data` 复制，而不是 `cudaMemcpyFromSymbol()`
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, width * height * 3 * sizeof(float), cudaMemcpyDeviceToHost));
+
+    // 5. OpenCV 处理并保存
+    cv::Mat image(height, width, CV_32FC3, h_data);
+    cv::Mat scaledImage;
+    image.convertTo(scaledImage, CV_8UC3, 255.0);
+    cv::imwrite(filename, scaledImage);
+
+    // 6. 释放主机端内存
+    delete[] h_data;
+}
+
+
+
+void saveSingleChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename) {
+	float* d_data_ptr;
+
+    // **先获取 `__device__` 变量的值，即它存储的 GPU 指针地址**
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_data, sizeof(float*)));
+	// 分配主机内存
+	float* h_data = new float[width * height];
+	// 从设备内存拷贝到主机内存
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, width * height * sizeof(float), cudaMemcpyDeviceToHost));
+
+	// 将数据转换为OpenCV的Mat格式
+	cv::Mat image(height, width, CV_32FC1, h_data);
+
+	// 将浮点图像数据乘以255并转换为8位图像
+	cv::Mat scaledImage;
+	image.convertTo(scaledImage, CV_8UC1, 255.0);
+
+	// 保存图像
+	cv::imwrite(filename, scaledImage);
+
+	// 释放主机内存
+	delete[] h_data;
+}
 
 
 DataParameter::DataParameter()

@@ -68,6 +68,10 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "semaphore": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "span": "cpp",
+        "valarray": "cpp"
     }
 }

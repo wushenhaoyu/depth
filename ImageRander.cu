@@ -139,7 +139,7 @@ __global__ void computeLensMeanDispKernel()
 }
 
 
-void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter, cv::Mat &rawDisp)
+void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
     MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
