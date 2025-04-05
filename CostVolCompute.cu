@@ -37,12 +37,10 @@ __global__ void rgbToGrayKernel(int width, int height) {
     if (x >= width || y >= height) return;
 
     int idx = y * width * 3 + x * 3;
-    float r = d_inputImg[idx];
+    float b = d_inputImg[idx];
     float g = d_inputImg[idx + 1];
-    float b = d_inputImg[idx + 2];
-    //printf("%f %f %f\n", r, g, b);
-    d_grayImg[y * width + x] = 0.299f * r + 0.587f * g + 0.114f * b;
-    //printf("%f\n", d_grayImg[y * width + x]);
+    float r = d_inputImg[idx + 2];
+    d_grayImg[y * width + x] = 0.299f * r + 0.587f * g + 0.114f * b; 
 }
 
 // CUDA 内核函数：计算 Sobel 梯度
@@ -74,6 +72,7 @@ __device__ float myCostGrd(const float* lC, const float* rC, const float* lG, co
     clrDiff *= 0.3333333333f;
 
     float grdDiff = fabsf(lG[0] - rG[0]);
+    //printf("clrDiff: %f, grdDiff: %f\n", clrDiff, grdDiff);
 
     return clrDiff + grdDiff;
 }
@@ -90,26 +89,37 @@ __global__ void costVolDataComputeKernel() {
 
     // 计算一维索引
     int index = y * d_rawImageParameter.m_xLensNum + x;
-
     CudaPoint2f centerPos = CudaPoint2f(d_microImageParameter.m_ppLensCenterPoints[index].x, d_microImageParameter.m_ppLensCenterPoints[index].y);
     int curCenterIndex = index;
-
-    for (int py = centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow; 
-         py <= centerPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow; py++) {
-        for (int px = centerPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow; 
-             px <= centerPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow; px++) {
-            int pyxIndex = py * d_rawImageParameter.m_xLensNum + px;
+    //printf("index: %d,d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]:%d\n", index, d_microImageParameter.m_ppPixelsMappingSet[index]);
+    //printf("index: %d, centerPos: (%f, %f)\n",curCenterIndex, centerPos.x, centerPos.y);
+    int py_begin = int(centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
+    int py_end = int(centerPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow);
+    int px_begin = int(centerPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
+    int px_end = int(centerPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow);
+    
+   //printf("index: %d, centerPos: (%f, %f),d_microImageParameter.m_circleDiameter:%f,d_microImageParameter.m_circleNarrow:%f,res:%f\n",curCenterIndex, centerPos.x, centerPos.y,d_microImageParameter.m_circleDiameter,d_microImageParameter.m_circleNarrow,centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
+        //printf("d_microImageParameter.m_circleDiameter:%f,d_microImageParameter.m_circleNarrow:%f\n",d_microImageParameter.m_circleDiameter,d_microImageParameter.m_circleNarrow);
+        for (int py = py_begin; 
+         py <= py_end; py++) {
+        for (int px = px_begin; 
+             px <= px_end; px++) {
+            int pyxIndex = py * d_rawImageParameter.m_srcImgWidth + px;
             if (d_microImageParameter.m_ppPixelsMappingSet[pyxIndex] == curCenterIndex) {
+                //printf("index: %d,d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]:%d\n", index, d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]);
                 for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
                     float tempSumCost = 0.0f;
                     int tempCostNum = 0;
+                
 
                     CudaPoint2f curPoint = CudaPoint2f(px, py);
                     CudaPoint2f matchPoint = CudaPoint2f(0.0f, 0.0f);
                     float realDisp = d_disparityParameter.m_dispStep * d + d_disparityParameter.m_dispMin;
-                    MatchNeighborLens* matchNeighborLens = &d_microImageParameter.m_ppMatchNeighborLens[index];
+                    MatchNeighborLens* matchNeighborLens = &d_microImageParameter.m_ppMatchNeighborLens[index * NEIGHBOR_MATCH_LENS_NUM];
 
                     for (int i = 0; i < NEIGHBOR_MATCH_LENS_NUM; i++) {
+                        //if(y == 48 && x == 5 && d == 22 && px == 276)
+                        //printf("i:%d, d:%d, py:%d, px:%d,y:%d,x:%d, matchNeighborLens[i].m_centerPosY:%f, matchNeighborLens[i].m_centerPosX:%f, matchNeighborLens[i].m_centerDis:%f\n", i, d, py, px,y,x,matchNeighborLens[i].m_centerPosY, matchNeighborLens[i].m_centerPosX, matchNeighborLens[i].m_centerDis);
                         float matchCenterPos_y = matchNeighborLens[i].m_centerPosY;
                         float matchCenterPos_x = matchNeighborLens[i].m_centerPosX;
                         float centerDis = matchNeighborLens[i].m_centerDis;
@@ -122,7 +132,7 @@ __global__ void costVolDataComputeKernel() {
 
                         if (matchPoint.y < 0 || matchPoint.y >= d_rawImageParameter.m_srcImgHeight ||
                             matchPoint.x < 0 || matchPoint.x >= d_rawImageParameter.m_srcImgWidth ||
-                            d_microImageParameter.m_ppPixelsMappingSet[int(matchPoint.y) * d_rawImageParameter.m_xLensNum + int(matchPoint.x)] != matchCenterIndex) continue;
+                            d_microImageParameter.m_ppPixelsMappingSet[int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth + int(matchPoint.x)] != matchCenterIndex) continue;
 
                         float* lC = d_inputImg + py * d_rawImageParameter.m_srcImgWidth * 3 + px * 3;
                         float* lG = d_gradImg + py * d_rawImageParameter.m_srcImgWidth + px;
@@ -133,7 +143,7 @@ __global__ void costVolDataComputeKernel() {
                             tempSumCost += myCostGrd(lC, rC, lG, rG);
                         } else {
                             int tempRx = int(matchPoint.x), tempRy = int(matchPoint.y);
-                            double alphaX = matchPoint.x - tempRx, alphaY = matchPoint.y - tempRy;
+                            float alphaX = matchPoint.x - tempRx, alphaY = matchPoint.y - tempRy;
 
                             float tempRc[3], tempRg;
                             float* rgb_y1 = d_inputImg + tempRy * d_rawImageParameter.m_srcImgWidth * 3;
@@ -147,6 +157,10 @@ __global__ void costVolDataComputeKernel() {
 
                             float* grd_y1 = d_gradImg + tempRy * d_rawImageParameter.m_srcImgWidth;
                             float* grd_y2 = d_gradImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth;
+                            if(px == 970 && py == 1839 && x == 21 && y == 48 && d == 35 && i == 0 )
+                               {
+                                    printf("%f , %f \n", rgb_y1[0], rgb_y2[0]);
+                               }
                             tempRg = (1 - alphaX) * (1 - alphaY) * grd_y1[tempRx] +
                                      alphaX * (1 - alphaY) * grd_y1[tempRx + 1] +
                                      (1 - alphaX) * alphaY * grd_y2[tempRx] +
@@ -163,11 +177,9 @@ __global__ void costVolDataComputeKernel() {
                         tempSumCost /= tempCostNum;
                     }
 
-                    int costVolIndex = d * d_rawImageParameter.m_srcImgHeight * d_rawImageParameter.m_srcImgWidth +
-                                       (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_srcImgWidth +
-                                       (px - d_rawImageParameter.m_xPixelBeginOffset);
-
-                    printf("costVolIndex: %d, d: %d, py: %d, px: %d, value:%f \n", costVolIndex, d, py, px,tempSumCost);
+                    int costVolIndex = d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth +
+                    (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_recImgWidth +
+                    (px - d_rawImageParameter.m_xPixelBeginOffset);
                     d_costVol[costVolIndex] = tempSumCost;
                 }
             }
@@ -175,6 +187,14 @@ __global__ void costVolDataComputeKernel() {
     }
 }
 
+
+__global__ void initializeCostVolume(int totalElements) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 计算全局索引
+    if (idx < totalElements) {
+        d_costVol[idx] = 0.0f; // 将每个元素初始化为0
+        float temp = d_costVol[idx];
+    }
+}
 
 
 // CUDA 加速版本的 costVolDataCompute 函数
@@ -204,6 +224,13 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     rgbToGrayKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
+    
+    dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC3, 1 / 255.0f);
+    cv::Mat im_gray, tmp;
+    //m_inputImg.convertTo(tmp, CV_32F);
+    //cv::cvtColor(tmp, im_gray, COLOR_RGB2GRAY);
+
+    // Compare GPU and CPU grayscale images
     /*float* d_data_ptr;
     CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_grayImg, sizeof(float*)));
     float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
@@ -220,7 +247,31 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
+    /*cv::Sobel(im_gray, m_gradImg, CV_32F, 1, 0, 1);
+    m_gradImg += 0.5;
+
     float* d_data_ptr;
+    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_gradImg, sizeof(float*)));
+    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
+    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
+    cv::Mat gpu_grad(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
+
+    cv::Mat cpu_grad;
+    m_gradImg.convertTo(cpu_grad, CV_32F);
+
+    cv::Mat diff;
+    cv::absdiff(cpu_grad, gpu_grad, diff);
+    cv::normalize(diff, diff, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+
+    cv::imwrite("gpu_grad.png", gpu_grad * 255.0);
+    cv::imwrite("cpu_grad.png", cpu_grad * 255.0);
+    cv::imwrite("diff_grad.png", diff);
+
+    delete[] h_data;*/
+
+
+
+    /*float* d_data_ptr;
     CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_gradImg, sizeof(float*)));
     float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
     CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
@@ -228,7 +279,16 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     cv::Mat scaledImage;
     cv::normalize(image, scaledImage, 0, 255, cv::NORM_MINMAX, CV_8UC1);
     cv::imwrite("grad.png", scaledImage);
-    delete[] h_data;
+    delete[] h_data;*/
+
+    size_t totalElements = disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth;
+	int totalElements_ = disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth;
+	int blockSize_ = 256; // 每个线程块的线程数
+    int numBlocks_ = (totalElements + blockSize_ - 1) / blockSize_; // 计算所需的线程块数量
+    initializeCostVolume<<<numBlocks_, blockSize>>>(totalElements_);
+
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
 
     blockSize = dim3 (32, 32);
     gridSize = dim3 (
