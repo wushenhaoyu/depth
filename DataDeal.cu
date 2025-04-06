@@ -48,7 +48,7 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
-__global__ void wtamatchKernel()
+__global__ void wtamatchKernel(float* d_rawDisp)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -59,15 +59,25 @@ __global__ void wtamatchKernel()
     {
         float minCost = d_fltMax;
         float minDis = 0;
-        for (int d = 1; d < d_disparityParameter.m_dispMax; d++) {
+        for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
 			
-			int costIdx = (d- 1) * width * height + y * width + x;
+			int costIdx = d * width * height + y * width + x;
 
-			if (costIdx >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
+			/*if (costIdx >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
 				//printf("x:%d y:%d d:%d costIdx:%d\n", x, y, d, costIdx);
 				return;
-			}
+			}*/
             float* costData = &d_costVol[costIdx];
+			//printf("x:%d y:%d d:%d cost:%f\n", x, y, d, *costData);
+			/*if(*costData != 0.0f && d == 1)
+			{
+				printf("data:%f\n", *costData);
+			}*/
+
+			/*if(d == 0)
+			{
+				printf("x:%d y:%d d:%d value:%f,res:%f", x, y, d,costData[0]);
+			}*/
             if (*costData * 1000000.0f < 0.01f)
                 continue;
 
@@ -83,6 +93,9 @@ __global__ void wtamatchKernel()
         }
 		int disIdx = y * width + x;
         d_rawDisp[disIdx] = minDis;
+		//if(y == 95&& x >= 890)
+		//printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
+		
     }
 }
 
@@ -90,7 +103,7 @@ __global__ void wtamatchKernel()
 void DataDeal::WTAMatch(int width,int height, int maxDis)
 {
 
-    dim3 blockSize(8, 8);  // 每个线程块 16x16
+    dim3 blockSize(16, 16);  // 每个线程块 16x16
 	dim3 gridSize((height  + blockSize.x - 1) / blockSize.x, (width + blockSize.y - 1) / blockSize.y);
 
     // 创建 CUDA 事件
@@ -99,7 +112,7 @@ void DataDeal::WTAMatch(int width,int height, int maxDis)
     cudaEventCreate(&stop);
     // 启动 CUDA 核函数
     cudaEventRecord(start); // 记录开始时间
-    wtamatchKernel<<<gridSize, blockSize>>>();
+    wtamatchKernel<<<gridSize, blockSize>>>(d_rawDisp);
     cudaEventRecord(stop);  // 记录结束时间
 
     CUDA_CHECK(cudaGetLastError());

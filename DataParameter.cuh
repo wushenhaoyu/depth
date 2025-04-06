@@ -99,9 +99,9 @@
  };
  
  struct FilterParameterDevice {
-	 const int* d_validNeighborPixelsNum;
-	 const int* d_validPixelsMask;
-	 const float* d_filterKernel;
+	 int* d_validNeighborPixelsNum;
+	 int* d_validPixelsMask;
+	 float* d_filterKernel;
  };
  
  struct MicroImageParameterDevice {
@@ -186,14 +186,14 @@
  extern __constant__ FilterParameterDevice d_filterPatameterDevice; 
  extern __device__ MicroImageParameterDevice d_microImageParameter; 
  extern __device__ float* d_costVol;
- extern __device__ float* d_rawDisp;
+ extern  float* d_rawDisp;
  extern __device__ float* d_ppLensMeanDisp;
  extern __device__ float* d_renderCache;
- extern __device__ float* d_inputImg;
- extern __device__ float* d_inputImgRec;
+ extern  float* d_inputImg;
+ extern  float* d_inputImgRec;
  extern __device__ float* d_grayImg;
  extern __device__ float* d_gradImg;
- extern __device__ RanderMapPatch* d_ppRanderMapPatch;
+ extern RanderMapPatch* d_ppRanderMapPatch;
  extern __device__ float* d_tmp;
  extern __device__ float* d_simg;
  extern __device__ int *d_sx_begin, *d_sy_begin, *d_sx_end, *d_sy_end;

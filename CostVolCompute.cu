@@ -30,7 +30,7 @@ struct CudaPoint2f {
 };
 
 // CUDA 内核函数：将图像从 RGB 转换为灰度
-__global__ void rgbToGrayKernel(int width, int height) {
+__global__ void rgbToGrayKernel(float* d_inputImg ,int width, int height) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -77,7 +77,7 @@ __device__ float myCostGrd(const float* lC, const float* rC, const float* lG, co
     return clrDiff + grdDiff;
 }
 
-__global__ void costVolDataComputeKernel() {
+__global__ void costVolDataComputeKernel(float* d_inputImg) {
     int y = blockIdx.y * blockDim.y + threadIdx.y + d_rawImageParameter.m_yCenterBeginOffset;
     int x = blockIdx.x * blockDim.x + threadIdx.x + d_rawImageParameter.m_xCenterBeginOffset;
 
@@ -91,22 +91,19 @@ __global__ void costVolDataComputeKernel() {
     int index = y * d_rawImageParameter.m_xLensNum + x;
     CudaPoint2f centerPos = CudaPoint2f(d_microImageParameter.m_ppLensCenterPoints[index].x, d_microImageParameter.m_ppLensCenterPoints[index].y);
     int curCenterIndex = index;
-    //printf("index: %d,d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]:%d\n", index, d_microImageParameter.m_ppPixelsMappingSet[index]);
-    //printf("index: %d, centerPos: (%f, %f)\n",curCenterIndex, centerPos.x, centerPos.y);
+   
     int py_begin = int(centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
     int py_end = int(centerPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow);
     int px_begin = int(centerPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
     int px_end = int(centerPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow);
     
-   //printf("index: %d, centerPos: (%f, %f),d_microImageParameter.m_circleDiameter:%f,d_microImageParameter.m_circleNarrow:%f,res:%f\n",curCenterIndex, centerPos.x, centerPos.y,d_microImageParameter.m_circleDiameter,d_microImageParameter.m_circleNarrow,centerPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow);
-        //printf("d_microImageParameter.m_circleDiameter:%f,d_microImageParameter.m_circleNarrow:%f\n",d_microImageParameter.m_circleDiameter,d_microImageParameter.m_circleNarrow);
+
         for (int py = py_begin; 
          py <= py_end; py++) {
         for (int px = px_begin; 
              px <= px_end; px++) {
             int pyxIndex = py * d_rawImageParameter.m_srcImgWidth + px;
             if (d_microImageParameter.m_ppPixelsMappingSet[pyxIndex] == curCenterIndex) {
-                //printf("index: %d,d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]:%d\n", index, d_microImageParameter.m_ppPixelsMappingSet[pyxIndex]);
                 for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
                     float tempSumCost = 0.0f;
                     int tempCostNum = 0;
@@ -118,8 +115,6 @@ __global__ void costVolDataComputeKernel() {
                     MatchNeighborLens* matchNeighborLens = &d_microImageParameter.m_ppMatchNeighborLens[index * NEIGHBOR_MATCH_LENS_NUM];
 
                     for (int i = 0; i < NEIGHBOR_MATCH_LENS_NUM; i++) {
-                        //if(y == 48 && x == 5 && d == 22 && px == 276)
-                        //printf("i:%d, d:%d, py:%d, px:%d,y:%d,x:%d, matchNeighborLens[i].m_centerPosY:%f, matchNeighborLens[i].m_centerPosX:%f, matchNeighborLens[i].m_centerDis:%f\n", i, d, py, px,y,x,matchNeighborLens[i].m_centerPosY, matchNeighborLens[i].m_centerPosX, matchNeighborLens[i].m_centerDis);
                         float matchCenterPos_y = matchNeighborLens[i].m_centerPosY;
                         float matchCenterPos_x = matchNeighborLens[i].m_centerPosX;
                         float centerDis = matchNeighborLens[i].m_centerDis;
@@ -157,10 +152,6 @@ __global__ void costVolDataComputeKernel() {
 
                             float* grd_y1 = d_gradImg + tempRy * d_rawImageParameter.m_srcImgWidth;
                             float* grd_y2 = d_gradImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth;
-                            if(px == 970 && py == 1839 && x == 21 && y == 48 && d == 35 && i == 0 )
-                               {
-                                    printf("%f , %f \n", rgb_y1[0], rgb_y2[0]);
-                               }
                             tempRg = (1 - alphaX) * (1 - alphaY) * grd_y1[tempRx] +
                                      alphaX * (1 - alphaY) * grd_y1[tempRx + 1] +
                                      (1 - alphaX) * alphaY * grd_y2[tempRx] +
@@ -210,36 +201,12 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     dim3 gridSize((rawImageParameter.m_srcImgWidth + blockSize.x - 1) / blockSize.x,
                   (rawImageParameter.m_srcImgHeight + blockSize.y - 1) / blockSize.y);
 
-    /*float* d_data_ptr;
-    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_inputImg, sizeof(float*)));
-    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * 3];
-    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * 3 * sizeof(float), cudaMemcpyDeviceToHost));
-    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC3, h_data);
-    cv::Mat scaledImage;
-    image.convertTo(scaledImage, CV_8UC3, 255.0);
-    cv::imwrite("input.bmp", scaledImage);
-    delete[] h_data;*/
 
     // 调用CUDA内核函数：将图像从RGB转换为灰度
-    rgbToGrayKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
+    rgbToGrayKernel<<<gridSize, blockSize>>>(d_inputImg,rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
-    
-    dataParameter.m_inputImg.convertTo(m_inputImg, CV_32FC3, 1 / 255.0f);
-    cv::Mat im_gray, tmp;
-    //m_inputImg.convertTo(tmp, CV_32F);
-    //cv::cvtColor(tmp, im_gray, COLOR_RGB2GRAY);
 
-    // Compare GPU and CPU grayscale images
-    /*float* d_data_ptr;
-    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_grayImg, sizeof(float*)));
-    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
-    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
-    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
-    cv::Mat scaledImage;
-    cv::normalize(image, scaledImage, 0, 255, cv::NORM_MINMAX, CV_8UC1);
-    cv::imwrite("gray.png", scaledImage);
-    delete[] h_data;*/
 
 
     // 调用CUDA内核函数：计算Sobel梯度
@@ -247,48 +214,6 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    /*cv::Sobel(im_gray, m_gradImg, CV_32F, 1, 0, 1);
-    m_gradImg += 0.5;
-
-    float* d_data_ptr;
-    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_gradImg, sizeof(float*)));
-    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
-    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
-    cv::Mat gpu_grad(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
-
-    cv::Mat cpu_grad;
-    m_gradImg.convertTo(cpu_grad, CV_32F);
-
-    cv::Mat diff;
-    cv::absdiff(cpu_grad, gpu_grad, diff);
-    cv::normalize(diff, diff, 0, 255, cv::NORM_MINMAX, CV_8UC1);
-
-    cv::imwrite("gpu_grad.png", gpu_grad * 255.0);
-    cv::imwrite("cpu_grad.png", cpu_grad * 255.0);
-    cv::imwrite("diff_grad.png", diff);
-
-    delete[] h_data;*/
-
-
-
-    /*float* d_data_ptr;
-    CUDA_CHECK(cudaMemcpyFromSymbol(&d_data_ptr, d_gradImg, sizeof(float*)));
-    float* h_data = new float[rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight];
-    CUDA_CHECK(cudaMemcpy(h_data, d_data_ptr, rawImageParameter.m_srcImgWidth * rawImageParameter.m_srcImgHeight * sizeof(float), cudaMemcpyDeviceToHost));
-    cv::Mat image(rawImageParameter.m_srcImgHeight, rawImageParameter.m_srcImgWidth, CV_32FC1, h_data);
-    cv::Mat scaledImage;
-    cv::normalize(image, scaledImage, 0, 255, cv::NORM_MINMAX, CV_8UC1);
-    cv::imwrite("grad.png", scaledImage);
-    delete[] h_data;*/
-
-    size_t totalElements = disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth;
-	int totalElements_ = disparityParameter.m_disNum * rawImageParameter.m_recImgHeight * rawImageParameter.m_recImgWidth;
-	int blockSize_ = 256; // 每个线程块的线程数
-    int numBlocks_ = (totalElements + blockSize_ - 1) / blockSize_; // 计算所需的线程块数量
-    initializeCostVolume<<<numBlocks_, blockSize>>>(totalElements_);
-
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
 
     blockSize = dim3 (32, 32);
     gridSize = dim3 (
@@ -297,7 +222,7 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     );
 
     // 调用 CUDA 内核函数
-    costVolDataComputeKernel<<<gridSize, blockSize>>>();
+    costVolDataComputeKernel<<<gridSize, blockSize>>>(d_inputImg);
 
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());

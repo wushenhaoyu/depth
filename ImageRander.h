@@ -43,6 +43,10 @@
 	 void imageRanderWithOutMask(const DataParameter &dataParameter);//��û�����Ŷ�mask����������ӿ׾���Ⱦ
  private:
 	 void imageRander(const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, float *d_randerImg);
+	 
+void imageRander(const RawImageParameter &rawImageParameter, 
+    const MicroImageParameter &microImageParameter,float* d_input,int Channels);
+
  //void imageRander(float **ppLensMeanDisp, const RawImageParameter &rawImageParameter, const MicroImageParameter &microImageParameter, cv::Mat &randerImg, cv::Mat &destImg);
 	 void imageRanderRepair(const RawImageParameter &rawImageParameter, cv::Mat &randerMap, cv::Mat &repairMap, RanderMapPatch **ppRanderMapPatch, int sx_begin, int sy_begin);//ȥ���߽��ɫ�ն�
 	 void outputSparseSceneDepth(string folderName, cv::Mat &sceneSparseDepth, cv::Mat &sceneDepthMask);
