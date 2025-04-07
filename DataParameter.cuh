@@ -28,6 +28,16 @@
  
  
  #define NEIGHBOR_MATCH_LENS_NUM 6 //����ƥ��͸���ĸ���
+
+ struct CudaPoint2f {
+    int x, y;
+
+    // 默认构造函数
+    __device__ __host__ CudaPoint2f() : x(0), y(0) {}
+
+    // 带参数的构造函数
+    __device__ __host__ CudaPoint2f(int x, int y) : x(x), y(y) {}
+};
  
  struct MatchNeighborLens
  {
@@ -109,7 +119,7 @@
 	 float m_circleNarrow;     // 圆形狭窄
 	 float m_radiusDisEqu;     // 圆形半径差异
  
-	 cv::Point2d* m_ppLensCenterPoints;  // 存储在 GPU 上的 Lens Center Points
+	 CudaPoint2f* m_ppLensCenterPoints;  // 存储在 GPU 上的 Lens Center Points
 	 int* m_ppPixelsMappingSet;           // 存储在 GPU 上的 Pixels Mapping Set
 	 MatchNeighborLens* m_ppMatchNeighborLens;  // 存储在 GPU 上的 Match Neighbor Lens
  };
@@ -180,13 +190,14 @@
 	 int m_filterRadius; //���Ӳ���˲��뾶����Ҫ�Ƿ����˲��ۺϣ�
  };
  
- 
+
  extern __constant__ RawImageParameter d_rawImageParameter;
  extern __constant__ DisparityParameter d_disparityParameter;
  extern __constant__ FilterParameterDevice d_filterPatameterDevice; 
- extern __device__ MicroImageParameterDevice d_microImageParameter; 
+ extern  MicroImageParameterDevice* d_microImageParameter; 
  extern __device__ float* d_costVol;
  extern  float* d_rawDisp;
+ extern  float* d_rawDisp_temp;
  extern __device__ float* d_ppLensMeanDisp;
  extern __device__ float* d_renderCache;
  extern  float* d_inputImg;
@@ -196,7 +207,10 @@
  extern RanderMapPatch* d_ppRanderMapPatch;
  extern __device__ float* d_tmp;
  extern __device__ float* d_simg;
- extern __device__ int *d_sx_begin, *d_sy_begin, *d_sx_end, *d_sy_end;
+ extern int* d_sx_begin;
+ extern int* d_sy_begin;
+ extern int* d_sx_end;
+ extern int* d_sy_end;
  extern __device__ int *d_randerMapWidth, *d_randerMapHeight;
  extern __constant__ float d_fltMax;
  extern __constant__ int d_meanDispLenRadius;

@@ -95,7 +95,7 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 	}
 }*/
 
-__global__ void costVolWindowFilterKernel(
+__global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImageParameter
 ) {
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -108,12 +108,12 @@ __global__ void costVolWindowFilterKernel(
         return;
     }
 
-    Point2d curCenterPos = d_microImageParameter.m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
-    int xBegin = curCenterPos.x - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
-    int yBegin = curCenterPos.y - d_microImageParameter.m_circleDiameter / 2 + d_microImageParameter.m_circleNarrow;
-    int xEnd = curCenterPos.x + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
-    int yEnd = curCenterPos.y + d_microImageParameter.m_circleDiameter / 2 - d_microImageParameter.m_circleNarrow;
-
+    CudaPoint2f curCenterPos = d_microImageParameter->m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
+    printf("x:%d y:%d sx:%d sy:%d\n",x,y,curCenterPos.x,curCenterPos.y);
+    int xBegin = curCenterPos.x - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
+    int yBegin = curCenterPos.y - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
+    int xEnd = curCenterPos.x + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
+    int yEnd = curCenterPos.y + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
     int maskWidth = xEnd - xBegin + 1;
     int maskHeight = yEnd - yBegin + 1;
 
@@ -131,11 +131,6 @@ __global__ void costVolWindowFilterKernel(
             }
         }
 
-        if(filteredValue!=0.0f )
-        {
-            //printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, d, srcCost[0], filteredValue);
-        }
-
         // 计算 divideMask 和 multiMask 的索引
         int divideMaskIndex = (y - yBegin) * maskWidth + (x - xBegin);
         int multiMaskIndex = (y - yBegin) * maskWidth + (x - xBegin);
@@ -145,6 +140,8 @@ __global__ void costVolWindowFilterKernel(
         filteredValue *= d_filterPatameterDevice.d_validPixelsMask[multiMaskIndex];
 
         srcCost[0] = filteredValue;
+        
+        //printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, d, srcCost[0], filteredValue);
     }
 }
 
@@ -167,7 +164,7 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
 
     // 启动 CUDA 核函数
     cudaEventRecord(start); // 记录开始时间
-    costVolWindowFilterKernel<<<gridDim, blockDim>>>();
+    costVolWindowFilterKernel<<<gridDim, blockDim>>>(d_microImageParameter);
     cudaEventRecord(stop);  // 记录结束时间
 
     // 检查 CUDA 错误
