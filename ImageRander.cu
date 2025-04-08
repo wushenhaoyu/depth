@@ -88,7 +88,7 @@ __global__ void printLensCenterPoints(MicroImageParameterDevice* d_microImagePar
 
         // 获取当前点的坐标
         CudaPoint2f point = d_microImageParameterDevice->m_ppLensCenterPoints[idx];
-        printf("x:%d,y:%d,px:%d,py:%d\n",x,y,point.x,point.y);
+        //printf("x:%d,y:%d,px:%d,py:%d\n",x,y,point.x,point.y);
 
     }
 }
@@ -139,9 +139,9 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 
 
 	imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
-    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapHeightVal,randerMapWidthVal_, "result_3.bmp");
+    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapHeightVal,randerMapWidthVal_, "./res/result_3.bmp");
     imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
-    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapHeightVal,randerMapWidthVal_, "result_1.bmp");
+    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapHeightVal,randerMapWidthVal_, "./res/result_1.bmp");
 
 }
 
@@ -229,7 +229,7 @@ __global__ void computeBoundaryKernel(RanderMapPatch* d_ppRanderMapPatch,
         // 使用一维数组访问
         int sy = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sy;
         int sx = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sx;
-        printf("x:%d y:%d sx:%d sy:%d\n",x,y,sx,sy);
+       // printf("x:%d y:%d sx:%d sy:%d\n",x,y,sx,sy);
         atomicMin(d_sx_begin, sx - DEST_WIDTH_ / 2);
         atomicMin(d_sy_begin, sy - DEST_HEIGHT_ / 2);
         atomicMax(d_sx_end, sx + DEST_WIDTH_ / 2);
@@ -263,7 +263,7 @@ __global__ void processPatchKernel(MicroImageParameterDevice* d_microImageParame
     d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sx = int(curCenterPos.x);
     float *d_srcImg = d_input + (starty * d_rawImageParameter.m_xLensNum + startx) * Channels;
     float *d_simg = d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].simg;
-    printf("x:%d y:%d,rx:%d,ry:%d, sx:%d sy:%d\n",xAdjusted,yAdjusted,curCenterPos.x,curCenterPos.y,d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sx,d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sy);
+    //printf("x:%d y:%d,rx:%d,ry:%d, sx:%d sy:%d\n",xAdjusted,yAdjusted,curCenterPos.x,curCenterPos.y,d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sx,d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sy);
 
     int i = threadIdx.x;
     int j = threadIdx.y;

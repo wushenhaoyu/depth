@@ -36,7 +36,7 @@ __constant__ int d_destHeight;
 __global__ void zeroFillSimg(RanderMapPatch* d_ppRanderMapPatch, int numPatches, int width, int height, int channels) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numPatches) {
-		printf("idx = %d\n", idx); // 打印当前索引
+		//printf("idx = %d\n", idx); // 打印当前索引
         RanderMapPatch patch = d_ppRanderMapPatch[idx];
         float* simg = patch.simg;
         int totalPixels = width * height * channels;
@@ -55,7 +55,7 @@ __global__ void printLensCenterPoints_1(MicroImageParameterDevice* d_microImageP
 
         // 获取当前点的坐标
         CudaPoint2f point = d_microImageParameterDevice->m_ppLensCenterPoints[idx];
-        printf("x:%d,y:%d,px:%d,py:%d\n",x,y,point.x,point.y);
+        //printf("x:%d,y:%d,px:%d,py:%d\n",x,y,point.x,point.y);
 
     }
 }
@@ -162,7 +162,7 @@ void DataParameter::mapToGPU() {
 			
             lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x = int(m_microImageParameter.m_ppLensCenterPoints[y][x].x);
 			lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y = int(m_microImageParameter.m_ppLensCenterPoints[y][x].y);
-			printf("x:%d,y:%d\n",lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x,lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y );
+			//printf("x:%d,y:%d\n",lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x,lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y );
 		}
     }
     CUDA_CHECK(cudaMemcpy(h_microImageParameterDevice.m_ppLensCenterPoints, lensCenterPointsHost, lensCenterPointsSize, cudaMemcpyHostToDevice));

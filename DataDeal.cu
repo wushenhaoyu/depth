@@ -54,6 +54,11 @@ __global__ void wtamatchKernel(float* d_rawDisp)
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int height = d_rawImageParameter.m_recImgHeight;
     int width = d_rawImageParameter.m_recImgWidth;
+	//if(y > 1600)
+	//printf("x:%d y:%d\n", x, y);
+	
+	
+
 
     if (x < width && y < height)
     {
@@ -62,22 +67,7 @@ __global__ void wtamatchKernel(float* d_rawDisp)
         for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
 			
 			int costIdx = d * width * height + y * width + x;
-
-			/*if (costIdx >= d_disparityParameter.m_disNum * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth) {
-				//printf("x:%d y:%d d:%d costIdx:%d\n", x, y, d, costIdx);
-				return;
-			}*/
             float* costData = &d_costVol[costIdx];
-			//printf("x:%d y:%d d:%d cost:%f\n", x, y, d, *costData);
-			/*if(*costData != 0.0f && d == 1)
-			{
-				printf("data:%f\n", *costData);
-			}*/
-
-			/*if(d == 0)
-			{
-				printf("x:%d y:%d d:%d value:%f,res:%f", x, y, d,costData[0]);
-			}*/
             if (*costData * 1000000.0f < 0.01f)
                 continue;
 
@@ -94,6 +84,7 @@ __global__ void wtamatchKernel(float* d_rawDisp)
 		int disIdx = y * width + x;
         d_rawDisp[disIdx] = minDis;
 		//if(y == 95&& x >= 890)
+		if( x >= 1700);
 		//printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
 		
     }
@@ -103,8 +94,9 @@ __global__ void wtamatchKernel(float* d_rawDisp)
 void DataDeal::WTAMatch(int width,int height, int maxDis)
 {
 
-    dim3 blockSize(16, 16);  // 每个线程块 16x16
-	dim3 gridSize((height  + blockSize.x - 1) / blockSize.x, (width + blockSize.y - 1) / blockSize.y);
+    dim3 blockSize(32, 32);  // 每个线程块 16x16
+	dim3 gridSize((width + blockSize.x - 1) / blockSize.x,
+	(height + blockSize.y - 1) / blockSize.y);
 
     // 创建 CUDA 事件
     cudaEvent_t start, stop;

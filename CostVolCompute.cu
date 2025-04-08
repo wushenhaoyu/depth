@@ -82,7 +82,7 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
     // 计算一维索引
     int index = y * d_rawImageParameter.m_xLensNum + x;
     CudaPoint2f centerPos = d_microImageParameter->m_ppLensCenterPoints[index];
-    printf("x:%d y:%d centerPos.x:%d centerPos.y:%d\n", x, y, centerPos.x, centerPos.y);
+    //printf("x:%d y:%d centerPos.x:%d centerPos.y:%d\n", x, y, centerPos.x, centerPos.y);
     int curCenterIndex = index;
    
     int py_begin = int(centerPos.y - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow);

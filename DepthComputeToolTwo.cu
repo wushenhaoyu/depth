@@ -37,6 +37,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	RawImageParameter rawImageParameter = m_dataParameter.getRawImageParameter();
 	DisparityParameter disparityParameter = m_dataParameter.getDisparityParameter();
 
+	saveThreeChannelGpuMemoryAsImage(d_inputImgRec, rawImageParameter.m_recImgWidth , rawImageParameter.m_recImgHeight, "/res/d_inputImgRec.png");
 
 //	/*
 	CostVolCompute costVolCompute;
@@ -46,7 +47,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "init raw cost vol compute use time: " << duration  << " ms " << std::endl;
 //	*/
-
+ 
 
 	start = std::chrono::high_resolution_clock::now();
 	DataDeal dataDeal;
@@ -57,7 +58,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "DataDeal use time: " << duration  << " ms " << std::endl;
 
-	saveSingleChannelGpuMemoryAsImage(d_rawDisp, rawImageParameter.m_recImgWidth , rawImageParameter.m_recImgHeight, "dispBeforeFilter.png");
+	saveSingleChannelGpuMemoryAsImage(d_rawDisp, rawImageParameter.m_recImgWidth , rawImageParameter.m_recImgHeight, "./res/dispBeforeFilter.png");
 
 	
 
@@ -65,6 +66,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	start = std::chrono::high_resolution_clock::now();
 	costVolFilter.costVolWindowFilter(m_dataParameter, nullptr);
 	dataDeal.WTAMatch(rawImageParameter.m_recImgWidth, rawImageParameter.m_recImgHeight, disparityParameter.m_disNum);//����
+	saveSingleChannelGpuMemoryAsImage(d_rawDisp, rawImageParameter.m_recImgWidth , rawImageParameter.m_recImgHeight, "./res/dispAfterLocalSmooth.png");
 	//storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
 	std::cout << "disp_afterFilter final!" << std::endl;
 	end = std::chrono::high_resolution_clock::now();
