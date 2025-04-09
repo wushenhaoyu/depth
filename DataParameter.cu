@@ -7,7 +7,7 @@ using namespace std;
 /*没有经验,蠢猪写法*/
 __constant__ RawImageParameter d_rawImageParameter;
 __constant__ DisparityParameter d_disparityParameter;
-__device__ FilterParameterDevice d_filterPatameterDevice; 
+FilterParameterDevice* d_filterPatameterDevice; 
 MicroImageParameterDevice* d_microImageParameter;
 __device__ float* d_costVol;
  float* d_rawDisp;
@@ -15,8 +15,8 @@ __device__ float* d_costVol;
 __device__ float* d_ppLensMeanDisp;
  float* d_inputImg;
  float* d_inputImgRec;
-__device__ float* d_grayImg;
-__device__ float* d_gradImg;
+ float* d_grayImg;
+ float* d_gradImg;
 RanderMapPatch* d_ppRanderMapPatch;
 int* d_sx_begin;
 int* d_sy_begin;
@@ -24,6 +24,7 @@ int* d_sx_end;
 int* d_sy_end;
 __device__ int *d_randerMapWidth, *d_randerMapHeight;
 __constant__ float d_fltMax;
+__constant__ float d_filterRadius;
 __constant__ int d_meanDispLenRadius;
 __constant__ int d_patchScale9;
 __constant__ float d_randerScale;
@@ -76,6 +77,9 @@ void DataParameter::mapToGPU() {
     float fltMax = FLT_MAX;
     CUDA_CHECK(cudaMemcpyToSymbol(d_fltMax, &fltMax, sizeof(float)));
 
+	float filterRadius = 6;
+	CUDA_CHECK(cudaMemcpyToSymbol(d_filterRadius, &filterRadius, sizeof(float)));
+
     int meanDispLenRadius = MEAN_DISP_LEN_RADIUS;
     int patchScale9 = PATCH_SCALE9;
     float randerScale = RANDER_SCALE;
@@ -107,14 +111,12 @@ void DataParameter::mapToGPU() {
     CUDA_CHECK(cudaMemcpyToSymbol(d_ppLensMeanDisp, &h_ppLensMeanDisp, sizeof(float*)));
 
 
-	float* h_grayImg;
-	CUDA_CHECK(cudaMalloc((void**)&h_grayImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
-	CUDA_CHECK(cudaMemcpyToSymbol(d_grayImg, &h_grayImg, sizeof(float*)));
+	CUDA_CHECK(cudaMalloc((void**)&d_grayImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemset(d_grayImg, 0,m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
 
-	float* h_gradImg;
-	CUDA_CHECK(cudaMalloc((void**)&h_gradImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
-	CUDA_CHECK(cudaMemcpyToSymbol(d_gradImg, &h_gradImg, sizeof(float*)));
-
+	
+	CUDA_CHECK(cudaMalloc((void**)&d_gradImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemset(d_gradImg, 0,m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
 
 
 	int height = m_rawImageParameter.m_recImgHeight;
@@ -206,32 +208,38 @@ void DataParameter::mapToGPU() {
 
 
 	
-FilterParameterDevice filterParamDevice;
+	FilterParameterDevice h_filterPatameterDevice;
 
-// 确保 cv::Mat 数据是连续的，并为每个矩阵分配相应的设备内存
-int validNeighborPixelsNumSize = m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(int);
-// 1. 处理有效邻域像素数量（d_validNeighborPixelsNum）
-CUDA_CHECK(cudaMalloc((void**)&filterParamDevice.d_validNeighborPixelsNum, validNeighborPixelsNumSize));
-CUDA_CHECK(cudaMemcpy(filterParamDevice.d_validNeighborPixelsNum,
-					  m_filterPatameter.m_pValidNeighborPixelsNum->ptr<int>(0),
-					  validNeighborPixelsNumSize,
-					  cudaMemcpyHostToDevice));
-// 2. 处理有效像素掩码（d_validPixelsMask）
-int validPixelsMaskSize = m_filterPatameter.m_pValidPixelsMask->total() * sizeof(int);
+    // 2. 为 d_validNeighborPixelsNum 分配内存并复制数据
+    int validNeighborPixelsNumSize = m_filterPatameter.m_pValidNeighborPixelsNum->total() * sizeof(float);
+    CUDA_CHECK(cudaMalloc((void**)&h_filterPatameterDevice.d_validNeighborPixelsNum, validNeighborPixelsNumSize));
+    CUDA_CHECK(cudaMemcpy(h_filterPatameterDevice.d_validNeighborPixelsNum,
+                          m_filterPatameter.m_pValidNeighborPixelsNum->ptr<float>(0),
+                          validNeighborPixelsNumSize,
+                          cudaMemcpyHostToDevice));
 
-CUDA_CHECK(cudaMalloc((void**)&filterParamDevice.d_validPixelsMask, validPixelsMaskSize));
-CUDA_CHECK(cudaMemcpy(filterParamDevice.d_validPixelsMask,
-					  m_filterPatameter.m_pValidPixelsMask->ptr<int>(0),
-					  validPixelsMaskSize,
-					  cudaMemcpyHostToDevice));
+    // 3. 为 d_validPixelsMask 分配内存并复制数据
+    int validPixelsMaskSize = m_filterPatameter.m_pValidPixelsMask->total() * sizeof(float);
+    CUDA_CHECK(cudaMalloc((void**)&h_filterPatameterDevice.d_validPixelsMask, validPixelsMaskSize));
+    CUDA_CHECK(cudaMemcpy(h_filterPatameterDevice.d_validPixelsMask,
+                          m_filterPatameter.m_pValidPixelsMask->ptr<float>(0),
+                          validPixelsMaskSize,
+                          cudaMemcpyHostToDevice));
 
-int filterKernelSize = m_filterPatameter.m_filterKnernel.total() * sizeof(float);
-CUDA_CHECK(cudaMalloc((void**)&filterParamDevice.d_filterKernel, filterKernelSize));
-CUDA_CHECK(cudaMemcpy(filterParamDevice.d_filterKernel,
-					  m_filterPatameter.m_filterKnernel.ptr<float>(0),
-					  filterKernelSize,
-					  cudaMemcpyHostToDevice));
-CUDA_CHECK(cudaMemcpyToSymbol(d_filterPatameterDevice, &filterParamDevice, sizeof(FilterParameterDevice)));
+    // 4. 为 d_filterKernel 分配内存并复制数据
+    int filterKernelSize = m_filterPatameter.m_filterKnernel.total() * sizeof(float);
+    CUDA_CHECK(cudaMalloc((void**)&h_filterPatameterDevice.d_filterKernel, filterKernelSize));
+    CUDA_CHECK(cudaMemcpy(h_filterPatameterDevice.d_filterKernel,
+                          m_filterPatameter.m_filterKnernel.ptr<float>(0),
+                          filterKernelSize,
+                          cudaMemcpyHostToDevice));
+
+    // 5. 为 d_filterPatameterDevice 分配内存
+    CUDA_CHECK(cudaMalloc((void**)&d_filterPatameterDevice, sizeof(FilterParameterDevice)));
+
+    // 6. 将主机端的 h_filterPatameterDevice 拷贝到设备端的 d_filterPatameterDevice
+    CUDA_CHECK(cudaMemcpy(d_filterPatameterDevice, &h_filterPatameterDevice, sizeof(FilterParameterDevice), cudaMemcpyHostToDevice));
+
 
 
 int numPatches = m_rawImageParameter.m_yLensNum * m_rawImageParameter.m_xLensNum;

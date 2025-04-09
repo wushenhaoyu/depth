@@ -22,7 +22,7 @@ CostVolCompute::~CostVolCompute() {
 
 
 // CUDA 内核函数：将图像从 RGB 转换为灰度
-__global__ void rgbToGrayKernel(float* d_inputImg ,int width, int height) {
+__global__ void rgbToGrayKernel(float* d_inputImg,float* d_grayImg ,int width, int height) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -36,23 +36,28 @@ __global__ void rgbToGrayKernel(float* d_inputImg ,int width, int height) {
 }
 
 // CUDA 内核函数：计算 Sobel 梯度
-__global__ void sobelKernel( int width, int height) {
+__global__ void sobelKernel( int width, int height,float* d_grayImg,float* d_gradImg) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-
+    int idx = y * width + x;
     if (x >= width || y >= height) return;
 
-    int idx = y * width + x;
+    // 获取当前像素及其邻居的索引
+    int idx_north = (y - 1) * width + x;
+    int idx_south = (y + 1) * width + x;
+    int idx_west = y * width + (x - 1);
+    int idx_east = y * width + (x + 1);
+    int idx_north_west = (y - 1) * width + (x - 1);
+    int idx_north_east = (y - 1) * width + (x + 1);
+    int idx_south_west = (y + 1) * width + (x - 1);
+    int idx_south_east = (y + 1) * width + (x + 1);
 
-    // 获取相邻像素
-    float gx = -d_grayImg[(y - 1) * width + (x - 1)] - 2 * d_grayImg[y * width + (x - 1)] - d_grayImg[(y + 1) * width + (x - 1)]
-               + d_grayImg[(y - 1) * width + (x + 1)] + 2 * d_grayImg[y * width + (x + 1)] + d_grayImg[(y + 1) * width + (x + 1)];
+    // 计算水平梯度 (Gx)
+    float Gx = -d_grayImg[idx_north_west] - 2 * d_grayImg[idx_west] - d_grayImg[idx_south_west]
+               + d_grayImg[idx_north_east] + 2 * d_grayImg[idx_east] + d_grayImg[idx_south_east];
 
-    float gy = -d_grayImg[(y - 1) * width + (x - 1)] - d_grayImg[(y - 1) * width + x] - d_grayImg[(y - 1) * width + (x + 1)]
-               + d_grayImg[(y + 1) * width + (x - 1)] + d_grayImg[(y + 1) * width + x] + d_grayImg[(y + 1) * width + (x + 1)];
-
-    // 计算 Sobel 边缘响应
-    d_gradImg[idx] = sqrtf(gx * gx + gy * gy) + 0.5;
+    // 存储水平梯度结果
+    d_gradImg[idx] = Gx + 0.5;
 }
 
 __device__ float myCostGrd(const float* lC, const float* rC, const float* lG, const float* rG) {
@@ -69,7 +74,7 @@ __device__ float myCostGrd(const float* lC, const float* rC, const float* lG, co
     return clrDiff + grdDiff;
 }
 
-__global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImageParameter,float* d_inputImg) {
+__global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImageParameter,float* d_inputImg,float* d_gradImg) {
     int y = blockIdx.y * blockDim.y + threadIdx.y + d_rawImageParameter.m_yCenterBeginOffset;
     int x = blockIdx.x * blockDim.x + threadIdx.x + d_rawImageParameter.m_xCenterBeginOffset;
 
@@ -197,16 +202,18 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
 
 
     // 调用CUDA内核函数：将图像从RGB转换为灰度
-    rgbToGrayKernel<<<gridSize, blockSize>>>(d_inputImg,rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
+    rgbToGrayKernel<<<gridSize, blockSize>>>(d_inputImg,d_grayImg,rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
 
 
     // 调用CUDA内核函数：计算Sobel梯度
-    sobelKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight);
+    sobelKernel<<<gridSize, blockSize>>>(rawImageParameter.m_srcImgWidth, rawImageParameter.m_srcImgHeight,d_grayImg,d_gradImg);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
+
+    saveSingleChannelGpuMemoryAsImage(d_gradImg, rawImageParameter.m_srcImgWidth , rawImageParameter.m_srcImgHeight, "./res/gpu_grad.png");
 
 
     blockSize = dim3 (32, 32);
@@ -216,7 +223,7 @@ void CostVolCompute::costVolDataCompute(const DataParameter &dataParameter, Mat 
     );
 
     // 调用 CUDA 内核函数
-    costVolDataComputeKernel<<<gridSize, blockSize>>>(d_microImageParameter,d_inputImg);
+    costVolDataComputeKernel<<<gridSize, blockSize>>>(d_microImageParameter,d_inputImg,d_gradImg);
 
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());

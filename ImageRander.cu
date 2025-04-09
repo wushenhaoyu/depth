@@ -55,7 +55,7 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
                 if (globalX >= 0 && globalX < d_rawImageParameter.m_recImgWidth &&
                     globalY >= 0 && globalY < d_rawImageParameter.m_recImgHeight)
                 {
-                    sum += d_rawDisp_temp[globalY * d_rawImageParameter.m_recImgWidth + globalX];
+                    sum += d_rawDisp_temp[globalY * d_rawImageParameter.m_recImgWidth + globalX] * d_disparityParameter.m_dispStep + d_disparityParameter.m_dispMin;
                     count++;
                 }
             }
@@ -63,7 +63,8 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
 
         float meanDisp = sum / count;
         d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x] = fmax(meanDisp, (float)d_disparityParameter.m_dispMin);
-         
+         //if(x==21&&y==48)
+        // printf("x:%d y:%d meanDisp:%f\n",x,y,meanDisp);
     }
 }
 
@@ -130,7 +131,7 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
         gridSize = dim3((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x, 
                       (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
 
-    computeLensMeanDispKernel<<<gridSize, blockSize>>>(d_microImageParameter,d_rawDisp_temp);
+    computeLensMeanDispKernel<<<gridSize, blockSize>>>(d_microImageParameter,d_rawDisp);
 
     // Check for any errors during kernel launch
     CUDA_CHECK(cudaGetLastError());
@@ -139,9 +140,9 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 
 
 	imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
-    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapHeightVal,randerMapWidthVal_, "./res/result_3.bmp");
+    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapHeightVal,randerMapWidthVal_, "./res/randerSceneMap.bmp");
     imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
-    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapHeightVal,randerMapWidthVal_, "./res/result_1.bmp");
+    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapHeightVal,randerMapWidthVal_, "./res/randerDisMap.bmp");
 
 }
 

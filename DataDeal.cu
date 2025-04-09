@@ -74,17 +74,16 @@ __global__ void wtamatchKernel(float* d_rawDisp)
             if (*costData < minCost) {
                 if (*costData <= 0.0001f) {
                     minCost = -10.0f;
-                    minDis = 1;
+                    minDis = 1 / 255.0f;
                 } else {
                     minCost = costData[0];
-                    minDis = d;
+                    minDis = d / 255.0f;	 
                 }
             }
         }
 		int disIdx = y * width + x;
         d_rawDisp[disIdx] = minDis;
 		//if(y == 95&& x >= 890)
-		if( x >= 1700);
 		//printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
 		
     }
