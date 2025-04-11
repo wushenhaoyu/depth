@@ -30,13 +30,13 @@
  #define NEIGHBOR_MATCH_LENS_NUM 6 //����ƥ��͸���ĸ���
 
  struct CudaPoint2f {
-    int x, y;
+    float x, y;
 
     // 默认构造函数
     __device__ __host__ CudaPoint2f() : x(0), y(0) {}
 
     // 带参数的构造函数
-    __device__ __host__ CudaPoint2f(int x, int y) : x(x), y(y) {}
+    __device__ __host__ CudaPoint2f(float x, float y) : x(x), y(y) {}
 };
  
  struct MatchNeighborLens

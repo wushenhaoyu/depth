@@ -114,10 +114,10 @@ void DataParameter::mapToGPU() {
 	CUDA_CHECK(cudaMalloc((void**)&d_grayImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
     CUDA_CHECK(cudaMemset(d_grayImg, 0,m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
 
-	
+	/*
 	CUDA_CHECK(cudaMalloc((void**)&d_gradImg, m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
     CUDA_CHECK(cudaMemset(d_gradImg, 0,m_rawImageParameter.m_srcImgHeight * m_rawImageParameter.m_srcImgWidth * sizeof(float)));
-
+*/
 
 	int height = m_rawImageParameter.m_recImgHeight;
 	int width = m_rawImageParameter.m_recImgWidth;
@@ -162,8 +162,8 @@ void DataParameter::mapToGPU() {
         for (int x = 0; x < m_rawImageParameter.m_xLensNum; ++x) {
 			//printf("%f,%f",m_microImageParameter.m_ppLensCenterPoints[y][x].x,m_microImageParameter.m_ppLensCenterPoints[y][x].y);
 			
-            lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x = int(m_microImageParameter.m_ppLensCenterPoints[y][x].x);
-			lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y = int(m_microImageParameter.m_ppLensCenterPoints[y][x].y);
+            lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x = m_microImageParameter.m_ppLensCenterPoints[y][x].x;
+			lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y = m_microImageParameter.m_ppLensCenterPoints[y][x].y;
 			//printf("x:%d,y:%d\n",lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].x,lensCenterPointsHost[y * m_rawImageParameter.m_xLensNum + x].y );
 		}
     }
@@ -260,14 +260,6 @@ CUDA_CHECK(cudaMalloc((void**)&d_ppRanderMapPatch, numPatches * sizeof(RanderMap
 // 4. 将主机端的 RanderMapPatch 数组拷贝到设备端
 CUDA_CHECK(cudaMemcpy(d_ppRanderMapPatch, h_ppRanderMapPatch, numPatches * sizeof(RanderMapPatch), cudaMemcpyHostToDevice));
 
-
-dim3 block(16);
-dim3 grid((m_rawImageParameter.m_xLensNum * m_rawImageParameter.m_yLensNum + block.x - 1) / block.x);
-// Launch the kernel to print lens center points
-printLensCenterPoints_1<<<grid, block>>>(d_microImageParameter, m_rawImageParameter.m_yLensNum, m_rawImageParameter.m_xLensNum);
-// Check for any errors during kernel launch
-CUDA_CHECK(cudaGetLastError());
-CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 
@@ -275,12 +267,30 @@ CUDA_CHECK(cudaDeviceSynchronize());
 void DataParameter::UpdateImgToGPU() {
     // 将图像从 CV_8UC3 转换为 CV_32FC3
     cv::Mat inputImgFloat, inputImgRecFloat;
+	cv::Mat m_inputImg_,m_gradImg;
+	m_inputImg.convertTo(m_inputImg_, CV_32FC3, 1 / 255.0f);
+    cv::Mat im_gray, tmp;
+    m_inputImg_.convertTo(tmp, CV_32F);
+    cv::cvtColor(tmp, im_gray, COLOR_RGB2GRAY);
+
+    cv::Mat dst_x, dst_y;
+    cv::Sobel(im_gray, m_gradImg, CV_32F, 1, 0, 1);
+    m_gradImg += 0.5;
+    m_gradImg *= 255;
+    imwrite("grad.png", m_gradImg);
+    m_gradImg /= 255;
     m_inputImg.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
     m_inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+
+	size_t im_grad_size = m_gradImg.total() * m_gradImg.elemSize();
+	CUDA_CHECK(cudaMalloc((void**)&d_gradImg, im_grad_size));
+	CUDA_CHECK(cudaMemcpy(d_gradImg ,m_gradImg.ptr<float>(0), im_grad_size, cudaMemcpyHostToDevice));
+
 
     // 计算图像数据大小
     size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
     size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+
 
     // 分配 GPU 内存
     CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
@@ -300,8 +310,10 @@ void saveSingleChannelGpuMemoryAsImage(float* d_data, int width, int height, con
 
     // 将浮点数据转换为 uchar 数据
     cv::Mat img(height, width, CV_32FC1, h_data);
+	double minVal; double maxVal;
+	minMaxLoc(img, &minVal, &maxVal);
     cv::Mat img_8u;
-    img.convertTo(img_8u, CV_8UC1, 255.0); // 将浮点值 [0, 1] 转换为 [0, 255]
+    img.convertTo(img_8u, CV_8UC1,255.0 / (maxVal - minVal), -minVal*255.0 / (maxVal - minVal)); // 将浮点值 [0, 1] 转换为 [0, 255]
 
     // 保存图像
     cv::imwrite(filename, img_8u);

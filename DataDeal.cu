@@ -82,9 +82,9 @@ __global__ void wtamatchKernel(float* d_rawDisp)
             }
         }
 		int disIdx = y * width + x;
+		if(y == 95&& x == 890)
+		printf("x:%d y:%d  value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
         d_rawDisp[disIdx] = minDis;
-		//if(y == 95&& x >= 890)
-		//printf("x:%d y:%d d:%d value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
 		
     }
 }

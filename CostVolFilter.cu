@@ -143,10 +143,10 @@ __global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImag
                     float divide = d_filterPatameterDevice->d_validNeighborPixelsNum[globalY* d_rawImageParameter.m_srcImgWidth+ globalX];
                     float multiply = d_filterPatameterDevice->d_validPixelsMask[globalY*d_rawImageParameter.m_srcImgWidth + globalX];
 
-                    /*if(x == 2 && y == 2 && d == 35 && localX == 25 && localY == 25)
+                    if(x == 2 && y == 2 && d == 35 && localX == 25 && localY == 25)
                     {
                        printf("divide:%f multiply:%f,res:%f,src:%f\n",divide,multiply,filteredValue,destCost[localY * maskWidth + localX]);
-                    }*/
+                    }
                     destCost[localY * maskWidth + localX] = filteredValue / divide * multiply;
             } 
         }
