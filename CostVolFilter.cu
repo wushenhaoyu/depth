@@ -134,19 +134,19 @@ __global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImag
                             int localPx = localX + dx;
                             int localPy = localY + dy;
                             if (localPx >= 0 && localPx < maskWidth && localPy >= 0 && localPy < maskHeight) {
-                                filteredValue += d_costVol[d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + globalPy * d_rawImageParameter.m_recImgWidth + globalPx];;
+                                filteredValue += d_costVol[d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalPy -  d_rawImageParameter.m_yPixelBeginOffset)  * d_rawImageParameter.m_recImgWidth + (globalPx -  d_rawImageParameter.m_xPixelBeginOffset)];
                             }
                         }
                     }
                     
-                    //float* src = d_costVol + d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalY - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + globalX - d_rawImageParameter.m_xPixelBeginOffset;
+                    float* src = d_costVol + d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalY - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + globalX - d_rawImageParameter.m_xPixelBeginOffset;
                     float divide = d_filterPatameterDevice->d_validNeighborPixelsNum[globalY* d_rawImageParameter.m_srcImgWidth+ globalX];
                     float multiply = d_filterPatameterDevice->d_validPixelsMask[globalY*d_rawImageParameter.m_srcImgWidth + globalX];
 
-                    if(x == 2 && y == 2 && d == 35 && localX == 25 && localY == 25)
+                   /* if(x == 2 && y == 2 && d == 35)
                     {
-                       printf("divide:%f multiply:%f,res:%f,src:%f\n",divide,multiply,filteredValue,destCost[localY * maskWidth + localX]);
-                    }
+                       printf("i:%d,j:%d,divide:%f multiply:%f,res:%f,src:%f\n",localY,localX,divide,multiply,filteredValue,destCost[localY * maskWidth + localX],src[0]);
+                    }*/
                     destCost[localY * maskWidth + localX] = filteredValue / divide * multiply;
             } 
         }
