@@ -179,8 +179,13 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
                     (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_recImgWidth +
                     (px - d_rawImageParameter.m_xPixelBeginOffset);
                     d_costVol[costVolIndex] = tempSumCost;
-                    if(d == 35 && py == 1839 && px == 797)
-                    printf("px:%d, py:%d, d:%d, tempSumCost: %f\n", px, py, d, tempSumCost);
+                    if(d==35 && px == 144 &&py ==112)
+                    {
+                        printf("px:%d, py:%d, d:%d, tempSumCost: %f,res:%f\n", px, py, d, tempSumCost,d_costVol[35 * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (112 - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + 144 - d_rawImageParameter.m_xPixelBeginOffset]);
+                    }
+
+                    //if(d == 35 && py == 1839 )
+                    //printf("px:%d, py:%d, d:%d, tempSumCost: %f\n", px, py, d, tempSumCost);
                 }
             }
         }

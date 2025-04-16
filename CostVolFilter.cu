@@ -143,10 +143,6 @@ __global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImag
                     float divide = d_filterPatameterDevice->d_validNeighborPixelsNum[globalY* d_rawImageParameter.m_srcImgWidth+ globalX];
                     float multiply = d_filterPatameterDevice->d_validPixelsMask[globalY*d_rawImageParameter.m_srcImgWidth + globalX];
 
-                   /* if(x == 2 && y == 2 && d == 35)
-                    {
-                       printf("i:%d,j:%d,divide:%f multiply:%f,res:%f,src:%f\n",localY,localX,divide,multiply,filteredValue,destCost[localY * maskWidth + localX],src[0]);
-                    }*/
                     destCost[localY * maskWidth + localX] = filteredValue / divide * multiply;
             } 
         }
@@ -161,6 +157,7 @@ __global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImag
     }
     }
 }
+
 
 void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol) {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
