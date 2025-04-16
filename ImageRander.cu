@@ -290,8 +290,9 @@ __global__ void processPatchKernel(MicroImageParameterDevice* d_microImageParame
     d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sy = int(curCenterPos.y);
     d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].sx = int(curCenterPos.x);
 
-    float* d_srcImg = d_input + (starty * d_rawImageParameter.m_xLensNum + startx) * Channels;
+    float* d_srcImg = d_input + (starty * d_rawImageParameter.m_recImgWidth + startx) * Channels;
     float* d_simg = d_ppRanderMapPatch[yAdjusted * d_rawImageParameter.m_xLensNum + xAdjusted].simg;
+
 
     for (int j = j_start; j < patchHeight; j += stride_j) {
         for (int i = i_start; i < patchWidth; i += stride_i) {
