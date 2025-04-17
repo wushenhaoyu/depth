@@ -35,6 +35,7 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
     {
         // 计算当前中心点坐标
         CudaPoint2f curCenterPos = CudaPoint2f(d_microImageParameter->m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x].x, d_microImageParameter->m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x].y);
+       // printf("x:%d y:%d sx:%f sy:%f\n",x,y,curCenterPos.x,curCenterPos.y);
         int x_begin = curCenterPos.x - d_rawImageParameter.m_xPixelBeginOffset - d_meanDispLenRadius;
         int y_begin = curCenterPos.y - d_rawImageParameter.m_yPixelBeginOffset - d_meanDispLenRadius;
         // 计算区域的宽度和高度
@@ -62,6 +63,7 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
 
         float meanDisp = sum / count ;
         d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x] = fmax(meanDisp, 9.0f);
+
     }
 }
 
@@ -110,7 +112,6 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
     cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
     imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
     saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
-
 }
 
 
@@ -147,10 +148,13 @@ __global__ void accumulateKernel(RanderMapPatch* d_ppRanderMapPatch,float* d_ran
 
                 if (rander_x >= 0 && rander_x < d_randerMapWidth && rander_y >= 0 && rander_y < d_randerMapHeight)
                 {
+                    // 将补丁添加到渲染图
                     for (int c = 0; c < channels; ++c)
                     {
                         atomicAdd(&d_randerMap[(rander_y * d_randerMapWidth + rander_x) * channels + c], patch.simg[(py * DEST_WIDTH_ + px) * channels + c]);
                     }
+
+                    // 统计每个像素被多少个补丁贡献
                     atomicAdd(&d_randerCount[rander_y * d_randerMapWidth + rander_x], 1.0f);
                 }
             }
@@ -193,6 +197,7 @@ __global__ void computeBoundaryKernel(RanderMapPatch* d_ppRanderMapPatch,
         // 使用一维数组访问
         int sy = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sy;
         int sx = d_ppRanderMapPatch[y * d_rawImageParameter.m_xLensNum + x].sx;
+       // printf("x:%d y:%d sx:%d sy:%d\n",x,y,sx,sy);
         atomicMin(d_sx_begin, sx - DEST_WIDTH_ / 2);
         atomicMin(d_sy_begin, sy - DEST_HEIGHT_ / 2);
         atomicMax(d_sx_end, sx + DEST_WIDTH_ / 2);
@@ -271,6 +276,8 @@ __global__ void processPatchKernel(MicroImageParameterDevice* d_microImageParame
                                  (1 - wx) * wy * bottom_left +
                                  wx * wy * bottom_right;
     
+            // 写入输出 patch（局部 patch 图像）
+            //d_simg[(j * patchWidth + i) * Channels + c] = interpolated;
             int flip_x = patchWidth - i - 1;  // 水平翻转
             int flip_y = patchHeight - j - 1; // 垂直翻转
 
@@ -468,6 +475,7 @@ void ImageRander::imageRander(const RawImageParameter &rawImageParameter,
         cudaMemcpy(&x_right, d_x_right, sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(&y_top, d_y_top, sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(&y_below, d_y_below, sizeof(int), cudaMemcpyDeviceToHost);
+        //printf("x_left: %d, x_right: %d, y_top: %d, y_below: %d\n", x_left, x_right, y_top, y_below);
         isCalWH = 1 ;
     }
 

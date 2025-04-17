@@ -8,6 +8,7 @@
 #include "SceneDepthCompute.h"
 #include "ImageRander.h"
 #include <time.h>
+#include "DataParameter.cuh"
 
 DepthComputeToolTwo::DepthComputeToolTwo()
 {
@@ -78,6 +79,8 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "sub aperature rander use time: " << duration << " ms " << std::endl;
+
+
 	
 
 }
