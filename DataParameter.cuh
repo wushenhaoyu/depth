@@ -219,6 +219,7 @@
  extern __constant__ float d_randerScale;
  extern __constant__ int d_destWidth;
  extern __constant__ int d_destHeight;
+ extern float* d_data; 
 
  void saveSingleChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename);
  void saveThreeChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename);

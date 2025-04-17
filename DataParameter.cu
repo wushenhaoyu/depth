@@ -32,7 +32,7 @@ __constant__ int d_destWidth;
 __constant__ int d_destHeight;
 
 
-
+float* d_data; 
 
 __global__ void zeroFillSimg(RanderMapPatch* d_ppRanderMapPatch, int numPatches, int width, int height, int channels) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -260,6 +260,10 @@ CUDA_CHECK(cudaMalloc((void**)&d_ppRanderMapPatch, numPatches * sizeof(RanderMap
 // 4. 将主机端的 RanderMapPatch 数组拷贝到设备端
 CUDA_CHECK(cudaMemcpy(d_ppRanderMapPatch, h_ppRanderMapPatch, numPatches * sizeof(RanderMapPatch), cudaMemcpyHostToDevice));
 
+
+	size_t size = 9 * 9 *  3 * sizeof(float);
+	cudaMalloc((void**)&d_data, size);
+	cudaMemset(d_data, 0, size);
 }
 
 
