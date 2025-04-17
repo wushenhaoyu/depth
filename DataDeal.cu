@@ -54,8 +54,7 @@ __global__ void wtamatchKernel(float* d_rawDisp)
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int height = d_rawImageParameter.m_recImgHeight;
     int width = d_rawImageParameter.m_recImgWidth;
-	//if(y > 1600)
-	//printf("x:%d y:%d\n", x, y);
+	
 	
 	
 
@@ -82,13 +81,8 @@ __global__ void wtamatchKernel(float* d_rawDisp)
             }
         }
 		int disIdx = y * width + x;
-		if(y == 95&& x == 890)
-		printf("x:%d y:%d  value:%f,res:%f\n", x, y, minDis,d_rawDisp[disIdx]);
         d_rawDisp[disIdx] = minDis;
-		if(x==95&y==890)
-		{
-			printf("%f\n",d_costVol[35 * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (112 - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + 144 - d_rawImageParameter.m_xPixelBeginOffset]);
-		}
+
 		
     }
 }

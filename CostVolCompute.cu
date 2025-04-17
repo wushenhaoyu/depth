@@ -62,14 +62,8 @@ __global__ void sobelKernel( int width, int height,float* d_grayImg,float* d_gra
 
 __device__ float myCostGrd(const float* lC, const float* rC, const float* lG, const float* rG) {
     float clrDiff = 0.0f;
-    /*for (int c = 0; c < 3; c++) {
-        float temp = fabsf(lC[c] - rC[c]);
-        clrDiff += temp;
-    }
-    clrDiff *= 0.3333333333f;*/
-
     float grdDiff = fabsf(lG[0] - rG[0]);
-    //printf("clrDiff: %f, grdDiff: %f\n", clrDiff, grdDiff);
+
 
     return grdDiff;
 }
@@ -87,7 +81,6 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
     // 计算一维索引
     int index = y * d_rawImageParameter.m_xLensNum + x;
     CudaPoint2f centerPos = d_microImageParameter->m_ppLensCenterPoints[index];
-    //printf("x:%d y:%d centerPos.x:%d centerPos.y:%d\n", x, y, centerPos.x, centerPos.y);
     int curCenterIndex = index;
    
     int py_begin = int(centerPos.y - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow);
@@ -116,18 +109,14 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
                         float matchCenterPos_y = matchNeighborLens[i].m_centerPosY;
                         float matchCenterPos_x = matchNeighborLens[i].m_centerPosX;
                         float centerDis = matchNeighborLens[i].m_centerDis;
-                        /*if(d == 35 && py == 1839 && px == 797)
-                            printf("i:%d,matchCenterPos_y:%f matchCenterPos_x:%f centerDis:%d\n", i,matchCenterPos_y, matchCenterPos_x, centerDis);
-                        */
+
                         if (matchCenterPos_y < 0) break;
 
                         matchPoint.y = (centerDis + realDisp) * (matchCenterPos_y - centerPos.y) / centerDis + py;
                         matchPoint.x = (centerDis + realDisp) * (matchCenterPos_x - centerPos.x) / centerDis + px;
                         int matchCenterIndex = matchNeighborLens[i].m_centerIndex;
 
-                        /*if(d == 35 && py == 1839 && px == 797)
-                        printf("i:%d,matchPoint.y:%f,matchPoint.x:%f,matchCenterIndex:%d:\n",i,matchPoint.y,matchPoint.x,matchCenterIndex);
-                        */
+
 
                         if (matchPoint.y < 0 || matchPoint.y >= d_rawImageParameter.m_srcImgHeight ||
                             matchPoint.x < 0 || matchPoint.x >= d_rawImageParameter.m_srcImgWidth ||
@@ -163,9 +152,7 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
 
                             float* rC = tempRc;
                             float* rG = &tempRg;
-                            if(d == 35 && py == 1839 && px == 797)
-                            printf("i:%d,rC[0]:%f,rC[1]:%f,rC[2]:%f,rG:%f,lC[0]:%f,lC[1]:%f,lC[2]:%f,lG:%f,cache:%f\n",i,rC[0],rC[1],rC[2],*rG,lC[0],lC[1],lC[2],*lG,myCostGrd(lC, rC, lG, rG));
-                            
+
                             tempSumCost += myCostGrd(lC, rC, lG, rG);
                         }
                         tempCostNum++;
@@ -179,13 +166,6 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
                     (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_recImgWidth +
                     (px - d_rawImageParameter.m_xPixelBeginOffset);
                     d_costVol[costVolIndex] = tempSumCost;
-                    if(d==35 && px == 144 &&py ==112)
-                    {
-                        printf("px:%d, py:%d, d:%d, tempSumCost: %f,res:%f\n", px, py, d, tempSumCost,d_costVol[35 * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (112 - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + 144 - d_rawImageParameter.m_xPixelBeginOffset]);
-                    }
-
-                    //if(d == 35 && py == 1839 )
-                    //printf("px:%d, py:%d, d:%d, tempSumCost: %f\n", px, py, d, tempSumCost);
                 }
             }
         }
