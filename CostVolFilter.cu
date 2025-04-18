@@ -109,6 +109,7 @@ __global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImag
     }
 
     CudaPoint2f curCenterPos = d_microImageParameter->m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
+    //printf("x:%d y:%d sx:%d sy:%d\n",x,y,curCenterPos.x,curCenterPos.y);
     int xBegin = curCenterPos.x - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
     int yBegin = curCenterPos.y - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
     int xEnd = curCenterPos.x + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
