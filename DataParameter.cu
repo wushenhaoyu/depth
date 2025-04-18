@@ -10,6 +10,7 @@ __constant__ DisparityParameter d_disparityParameter;
 FilterParameterDevice* d_filterPatameterDevice; 
 MicroImageParameterDevice* d_microImageParameter;
 __device__ float* d_costVol;
+__device__ float* d_costVolFiltered;
  float* d_rawDisp;
  float* d_rawDisp_temp;
 __device__ float* d_ppLensMeanDisp;
@@ -95,6 +96,10 @@ void DataParameter::mapToGPU() {
     float* h_costVol;
     CUDA_CHECK(cudaMalloc((void**)&h_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_costVol, &h_costVol, sizeof(float*)));
+
+	float* h_costVolfilted;
+    CUDA_CHECK(cudaMalloc((void**)&h_costVol, m_disparityParameter.m_disNum * m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_costVolFiltered, &h_costVol, sizeof(float*)));
 
 
 	CUDA_CHECK(cudaMalloc((void**)&d_rawDisp, m_rawImageParameter.m_recImgHeight * m_rawImageParameter.m_recImgWidth * sizeof(float)));

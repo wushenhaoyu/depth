@@ -196,6 +196,7 @@
  extern FilterParameterDevice* d_filterPatameterDevice; 
  extern  MicroImageParameterDevice* d_microImageParameter; 
  extern __device__ float* d_costVol;
+ extern __device__ float* d_costVolFiltered;
  extern  float* d_rawDisp;
  extern  float* d_rawDisp_temp;
  extern __device__ float* d_ppLensMeanDisp;

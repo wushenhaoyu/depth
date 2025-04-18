@@ -59,105 +59,87 @@ void CostVolFilter::costVolBoundaryRepair(cv::Mat *costVol, const DisparityParam
 	}
 }
 
-/*void CostVolFilter::microImageDisparityFilter(const DataParameter &dataParameter, cv::Mat *&costVol, FilterOptimizeKind curFilterOptimizeKind)
-{//��С��microͼ������˲�
-	RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
-	MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
-	DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
-	FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
-	cv::Mat inputImg;
-	dataParameter.m_inputImgRec.convertTo(inputImg, CV_32FC3, 1 / 255.0f);
 
-#pragma omp parallel for
-	for (int y = rawImageParameter.m_yCenterBeginOffset; y < rawImageParameter.m_yLensNum - rawImageParameter.m_yCenterEndOffset; y++)
-	{
-		for (int x = rawImageParameter.m_xCenterBeginOffset; x < rawImageParameter.m_xLensNum - rawImageParameter.m_xCenterEndOffset; x++)
-		{
-			//std::cout << "micro --- y=" << y << "\tx=" << x << std::endl;
-			Point2d &curCenterPos = microImageParameter.m_ppLensCenterPoints[y][x];
+__global__ void costVolWindowFilterKernel(
+    MicroImageParameterDevice* d_microImageParameter,
+    FilterParameterDevice* d_filterPatameterDevice,
+    int disparityNum)
+{
+    int patchX = blockIdx.x;
+    int patchY = blockIdx.y;
 
-			int xBegin = curCenterPos.x - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow - rawImageParameter.m_xPixelBeginOffset;
-			int yBegin = curCenterPos.y - microImageParameter.m_circleDiameter / 2 + microImageParameter.m_circleNarrow - rawImageParameter.m_yPixelBeginOffset;
-			int xEnd = curCenterPos.x + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow - rawImageParameter.m_xPixelBeginOffset;
-			int yEnd = curCenterPos.y + microImageParameter.m_circleDiameter / 2 - microImageParameter.m_circleNarrow - rawImageParameter.m_yPixelBeginOffset;
-
-			cv::Mat referImg = inputImg(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
-			//cv::Mat multiMask = (*filterPatameter.m_pValidPixelsMask)(cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
-
-			cv::Mat *costFilter = new cv::Mat[disparityParameter.m_disNum];
-			for (int d = 0; d < disparityParameter.m_disNum; d++) 
-				costFilter[d] = costVol[d](cv::Rect(xBegin, yBegin, xEnd - xBegin + 1, yEnd - yBegin + 1));
-			
-			DisparityRefinement::getInstance()->localFilterOrOptimize(referImg, referImg, disparityParameter.m_disNum, costFilter, curFilterOptimizeKind);
-
-			delete[]costFilter;
-		}
-	}
-}*/
-
-__global__ void costVolWindowFilterKernel(MicroImageParameterDevice* d_microImageParameter,FilterParameterDevice* d_filterPatameterDevice
-) {
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (y < d_rawImageParameter.m_yCenterBeginOffset || 
-        y >= d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset ||
-        x < d_rawImageParameter.m_xCenterBeginOffset ||
-        x >= d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset)
-    {
+    if (patchX < d_rawImageParameter.m_xCenterBeginOffset || 
+        patchX >= d_rawImageParameter.m_xLensNum - d_rawImageParameter.m_xCenterEndOffset ||
+        patchY < d_rawImageParameter.m_yCenterBeginOffset || 
+        patchY >= d_rawImageParameter.m_yLensNum - d_rawImageParameter.m_yCenterEndOffset)
         return;
-    }
 
-    CudaPoint2f curCenterPos = d_microImageParameter->m_ppLensCenterPoints[y * d_rawImageParameter.m_xLensNum + x];
-    //printf("x:%d y:%d sx:%d sy:%d\n",x,y,curCenterPos.x,curCenterPos.y);
+    CudaPoint2f curCenterPos = d_microImageParameter->m_ppLensCenterPoints[patchY * d_rawImageParameter.m_xLensNum + patchX];
+
     int xBegin = curCenterPos.x - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
     int yBegin = curCenterPos.y - d_microImageParameter->m_circleDiameter / 2 + d_microImageParameter->m_circleNarrow;
-    int xEnd = curCenterPos.x + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
-    int yEnd = curCenterPos.y + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
-    int maskWidth = xEnd - xBegin + 1;
+    int xEnd   = curCenterPos.x + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
+    int yEnd   = curCenterPos.y + d_microImageParameter->m_circleDiameter / 2 - d_microImageParameter->m_circleNarrow;
+
+    int maskWidth  = xEnd - xBegin + 1;
     int maskHeight = yEnd - yBegin + 1;
-    for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
-        float destCost[38*38]; //Cuda不支持动态数组,这里写死了
 
-        
-    for (int localY = 0; localY < maskHeight; localY++) {
-        for (int localX = 0; localX < maskWidth; localX++) {
-            float filteredValue = 0.0f;
-            int globalX = xBegin + localX;
-            int globalY = yBegin + localY;
-            if (globalX >= 0 && globalX < d_rawImageParameter.m_recImgWidth &&
-                globalY >= 0 && globalY < d_rawImageParameter.m_recImgHeight) {
-                    for (int dy = -d_filterRadius; dy <= d_filterRadius; dy++) {
-                        for (int dx = -d_filterRadius; dx <= d_filterRadius; dx++) {
-                            int globalPx = globalX + dx;
-                            int globalPy = globalY + dy;
-                            int localPx = localX + dx;
-                            int localPy = localY + dy;
-                            if (localPx >= 0 && localPx < maskWidth && localPy >= 0 && localPy < maskHeight) {
-                                filteredValue += d_costVol[d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalPy -  d_rawImageParameter.m_yPixelBeginOffset)  * d_rawImageParameter.m_recImgWidth + (globalPx -  d_rawImageParameter.m_xPixelBeginOffset)];
-                            }
-                        }
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+    int d  = threadIdx.z;
+
+    int stride_x = blockDim.x;
+    int stride_y = blockDim.y;
+    int stride_d = blockDim.z;
+
+    for (int localY = ty; localY < maskHeight; localY += stride_y) {
+        for (int localX = tx; localX < maskWidth; localX += stride_x) {
+            for (int disp = d; disp < d_disparityParameter.m_disNum; disp += stride_d)
+            {
+                int globalX = xBegin + localX;
+                int globalY = yBegin + localY;
+
+                if (globalX < 0 || globalX >= d_rawImageParameter.m_recImgWidth ||
+                    globalY < 0 || globalY >= d_rawImageParameter.m_recImgHeight)
+                    continue;
+
+                float filteredValue = 0.0f;
+
+                for (int dy = -d_filterRadius; dy <= d_filterRadius; ++dy) {
+                    for (int dx = -d_filterRadius; dx <= d_filterRadius; ++dx) {
+                        int px = globalX + dx;
+                        int py = globalY + dy;
+
+                        if (px < 0 || px >= d_rawImageParameter.m_recImgWidth ||
+                            py < 0 || py >= d_rawImageParameter.m_recImgHeight)
+                            continue;
+
+                        int costIdx = disp * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth +
+                                      (py - d_rawImageParameter.m_yPixelBeginOffset) * d_rawImageParameter.m_recImgWidth +
+                                      (px - d_rawImageParameter.m_xPixelBeginOffset);
+
+                        filteredValue += d_costVol[costIdx];
                     }
-                    
-                    float* src = d_costVol + d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalY - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + globalX - d_rawImageParameter.m_xPixelBeginOffset;
-                    float divide = d_filterPatameterDevice->d_validNeighborPixelsNum[globalY* d_rawImageParameter.m_srcImgWidth+ globalX];
-                    float multiply = d_filterPatameterDevice->d_validPixelsMask[globalY*d_rawImageParameter.m_srcImgWidth + globalX];
+                }
 
-                    destCost[localY * maskWidth + localX] = filteredValue / divide * multiply;
-            } 
-        }
-    }
+                float divide = d_filterPatameterDevice->d_validNeighborPixelsNum[globalY * d_rawImageParameter.m_srcImgWidth + globalX];
+                float multiply = d_filterPatameterDevice->d_validPixelsMask[globalY * d_rawImageParameter.m_srcImgWidth + globalX];
 
-    for (int localY = 0; localY < maskHeight; localY++) { 
-        for (int localX = 0; localX < maskWidth; localX++) {
-            int globalX = xBegin + localX;
-            int globalY = yBegin + localY;
-            d_costVol[d * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth + (globalY - d_rawImageParameter.m_yPixelBeginOffset)* d_rawImageParameter.m_recImgWidth + globalX - d_rawImageParameter.m_xPixelBeginOffset] = destCost[localY * maskWidth + localX];
+                int writeX = globalX - d_rawImageParameter.m_xPixelBeginOffset;
+                int writeY = globalY - d_rawImageParameter.m_yPixelBeginOffset;
+
+                if (writeX >= 0 && writeX < d_rawImageParameter.m_recImgWidth &&
+                    writeY >= 0 && writeY < d_rawImageParameter.m_recImgHeight)
+                {
+                    int outIdx = disp * d_rawImageParameter.m_recImgHeight * d_rawImageParameter.m_recImgWidth +
+                                 writeY * d_rawImageParameter.m_recImgWidth + writeX;
+
+                    d_costVolFiltered[outIdx] = filteredValue / divide * multiply;
+                }
+            }
         }
-    }
     }
 }
-
 
 void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::Mat *costVol) {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
@@ -166,10 +148,6 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
     FilterPatameter filterPatameter = dataParameter.getFilterPatameter();
 
 
-    // 启动 CUDA 核函数
-    dim3 blockDim(32, 32);
-    dim3 gridDim((rawImageParameter.m_xLensNum + blockDim.x - 1) / blockDim.x, 
-                 (rawImageParameter.m_yLensNum + blockDim.y - 1) / blockDim.y);
 
     // 创建 CUDA 事件
     cudaEvent_t start, stop;
@@ -178,7 +156,14 @@ void CostVolFilter::costVolWindowFilter(const DataParameter &dataParameter, cv::
 
     // 启动 CUDA 核函数
     cudaEventRecord(start); // 记录开始时间
-    costVolWindowFilterKernel<<<gridDim, blockDim>>>(d_microImageParameter,d_filterPatameterDevice);
+    dim3 blockDim(16, 16, 4);  // z方向处理 disparity，8x8x4=256 threads
+    dim3 gridDim(rawImageParameter.m_xLensNum, rawImageParameter.m_yLensNum);
+    
+    costVolWindowFilterKernel<<<gridDim, blockDim>>>(
+        d_microImageParameter,
+        d_filterPatameterDevice,
+        disparityParameter.m_disNum
+    );
     cudaEventRecord(stop);  // 记录结束时间
 
     // 检查 CUDA 错误

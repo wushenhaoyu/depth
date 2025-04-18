@@ -52,7 +52,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	start = std::chrono::high_resolution_clock::now();
 	DataDeal dataDeal;
 	std::string  storeName;
-	dataDeal.WTAMatch(rawImageParameter.m_recImgWidth, rawImageParameter.m_recImgHeight, disparityParameter.m_disNum);//����
+	dataDeal.WTAMatch1(rawImageParameter.m_recImgWidth, rawImageParameter.m_recImgHeight, disparityParameter.m_disNum);//����
 	std::cout << "disp before filter final!" << std::endl;
 	end = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -65,7 +65,7 @@ void DepthComputeToolTwo::rawImageDisparityCompute()
 	CostVolFilter costVolFilter;
 	start = std::chrono::high_resolution_clock::now();
 	costVolFilter.costVolWindowFilter(m_dataParameter, nullptr);
-	dataDeal.WTAMatch(rawImageParameter.m_recImgWidth, rawImageParameter.m_recImgHeight, disparityParameter.m_disNum);//����
+	dataDeal.WTAMatch2(rawImageParameter.m_recImgWidth, rawImageParameter.m_recImgHeight, disparityParameter.m_disNum);//����
 	//saveSingleChannelGpuMemoryAsImage(d_rawDisp, rawImageParameter.m_recImgWidth , rawImageParameter.m_recImgHeight, "./res/dispAfterLocalSmooth.png");
 	//storeName = m_dataParameter.m_folderPath + "/dispAfterLocalSmooth.png";
 	std::cout << "disp_afterFilter final!" << std::endl;

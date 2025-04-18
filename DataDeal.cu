@@ -48,7 +48,9 @@ void DataDeal::storeDataCostToXML(std::string dataCostFileName, const cv::Mat *&
 	fs.release();
 }
 
-__global__ void wtamatchKernel(float* d_rawDisp)
+
+
+__global__ void wtamatchKernel1(float* d_rawDisp)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -88,7 +90,7 @@ __global__ void wtamatchKernel(float* d_rawDisp)
 }
 
 
-void DataDeal::WTAMatch(int width,int height, int maxDis)
+void DataDeal::WTAMatch1(int width,int height, int maxDis)
 {
 
     dim3 blockSize(32, 32);  // 每个线程块 16x16
@@ -101,7 +103,107 @@ void DataDeal::WTAMatch(int width,int height, int maxDis)
     cudaEventCreate(&stop);
     // 启动 CUDA 核函数
     cudaEventRecord(start); // 记录开始时间
-    wtamatchKernel<<<gridSize, blockSize>>>(d_rawDisp);
+    wtamatchKernel1<<<gridSize, blockSize>>>(d_rawDisp);
+    cudaEventRecord(stop);  // 记录结束时间
+
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    // 计算运行时间
+    float milliseconds = 0;
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    // 销毁 CUDA 事件
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    std::cout << "MatchTest over!" << std::endl;
+
+	
+}
+
+__global__ void wtamatchKernel2(float* d_rawDisp)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int height = d_rawImageParameter.m_recImgHeight;
+    int width = d_rawImageParameter.m_recImgWidth;
+
+
+    if (x < width && y < height)
+    {
+        float minCost = d_fltMax;
+        float minDis = 0;
+        for (int d = 0; d < d_disparityParameter.m_disNum; d++) {
+			
+			int costIdx = d * width * height + y * width + x;
+            float* costData = &d_costVolFiltered[costIdx];
+            if (*costData * 1000000.0f < 0.01f)
+                continue;
+
+            if (*costData < minCost) {
+                if (*costData <= 0.0001f) {
+                    minCost = -10.0f;
+                    minDis = 1 / 255.0f;
+                } else {
+                    minCost = costData[0];
+                    minDis = d / 255.0f;	 
+                }
+            }
+        }
+		int disIdx = y * width + x;
+        d_rawDisp[disIdx] = minDis;
+
+		
+    }
+}
+
+void DataDeal::WTAMatch2(int width,int height, int maxDis)
+{
+
+    dim3 blockSize(32, 32);  // 每个线程块 16x16
+	dim3 gridSize((width + blockSize.x - 1) / blockSize.x,
+	(height + blockSize.y - 1) / blockSize.y);
+
+    // 创建 CUDA 事件
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    // 启动 CUDA 核函数
+    cudaEventRecord(start); // 记录开始时间
+    wtamatchKernel2<<<gridSize, blockSize>>>(d_rawDisp);
+    cudaEventRecord(stop);  // 记录结束时间
+
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+    // 计算运行时间
+    float milliseconds = 0;
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    // 销毁 CUDA 事件
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    std::cout << "MatchTest over!" << std::endl;
+
+	
+}
+
+void DataDeal::WTAMatch(int width,int height, int maxDis) /*为了防止报错,即使没用它*/
+{
+
+    dim3 blockSize(32, 32);  // 每个线程块 16x16
+	dim3 gridSize((width + blockSize.x - 1) / blockSize.x,
+	(height + blockSize.y - 1) / blockSize.y);
+
+    // 创建 CUDA 事件
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    // 启动 CUDA 核函数
+    cudaEventRecord(start); // 记录开始时间
+    wtamatchKernel1<<<gridSize, blockSize>>>(d_rawDisp);
     cudaEventRecord(stop);  // 记录结束时间
 
     CUDA_CHECK(cudaGetLastError());

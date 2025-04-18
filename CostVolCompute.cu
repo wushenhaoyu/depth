@@ -121,27 +121,17 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
                         if (matchPoint.y < 0 || matchPoint.y >= d_rawImageParameter.m_srcImgHeight ||
                             matchPoint.x < 0 || matchPoint.x >= d_rawImageParameter.m_srcImgWidth ||
                             d_microImageParameter->m_ppPixelsMappingSet[int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth + int(matchPoint.x)] != matchCenterIndex) continue;
-
-                        float* lC = d_inputImg + py * d_rawImageParameter.m_srcImgWidth * 3 + px * 3;
                         float* lG = d_gradImg + py * d_rawImageParameter.m_srcImgWidth + px;
 
                         if (int(matchPoint.y) == matchPoint.y && int(matchPoint.x) == matchPoint.x) {
-                            float* rC = d_inputImg + int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth * 3 + int(matchPoint.x) * 3;
+                
                             float* rG = d_gradImg + int(matchPoint.y) * d_rawImageParameter.m_srcImgWidth + int(matchPoint.x);
-                            tempSumCost += myCostGrd(lC, rC, lG, rG);
+                            tempSumCost += fabsf(lG[0] - rG[0]);
                         } else {
                             int tempRx = int(matchPoint.x), tempRy = int(matchPoint.y);
                             float alphaX = matchPoint.x - tempRx, alphaY = matchPoint.y - tempRy;
 
-                            float tempRc[3], tempRg;
-                            float* rgb_y1 = d_inputImg + tempRy * d_rawImageParameter.m_srcImgWidth * 3;
-                            float* rgb_y2 = d_inputImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth * 3;
-                            for (int i = 0; i < 3; i++) {
-                                tempRc[i] = (1 - alphaX) * (1 - alphaY) * rgb_y1[tempRx * 3 + i] +
-                                            alphaX * (1 - alphaY) * rgb_y1[(tempRx + 1) * 3 + i] +
-                                            (1 - alphaX) * alphaY * rgb_y2[tempRx * 3 + i] +
-                                            alphaX * alphaY * rgb_y2[(tempRx + 1) * 3 + i];
-                            }
+                            float tempRg;
 
                             float* grd_y1 = d_gradImg + tempRy * d_rawImageParameter.m_srcImgWidth;
                             float* grd_y2 = d_gradImg + (tempRy + 1) * d_rawImageParameter.m_srcImgWidth;
@@ -150,10 +140,9 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
                                      (1 - alphaX) * alphaY * grd_y2[tempRx] +
                                      alphaX * alphaY * grd_y2[tempRx + 1];
 
-                            float* rC = tempRc;
                             float* rG = &tempRg;
 
-                            tempSumCost += myCostGrd(lC, rC, lG, rG);
+                            tempSumCost += fabsf(lG[0] - rG[0]);
                         }
                         tempCostNum++;
                     }
@@ -173,13 +162,6 @@ __global__ void costVolDataComputeKernel(MicroImageParameterDevice *d_microImage
 }
 
 
-__global__ void initializeCostVolume(int totalElements) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 计算全局索引
-    if (idx < totalElements) {
-        d_costVol[idx] = 0.0f; // 将每个元素初始化为0
-        float temp = d_costVol[idx];
-    }
-}
 
 
 // CUDA 加速版本的 costVolDataCompute 函数
