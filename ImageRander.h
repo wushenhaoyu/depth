@@ -32,7 +32,8 @@
 	 float* simg; // 存储图像数据的指针，采用原始数组代替 cv::Mat
  };
  
- 
+ void saveSingleChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename);
+ void saveThreeChannelGpuMemoryAsImage(float* d_data, int width, int height,const std::string& filename);
  class ImageRander : public DataDeal
  {
  public:
