@@ -4,13 +4,17 @@
             "name": "OpenCV",
             "includePath": [
                 "${workspaceFolder}/include",
-                "/usr/local/include/opencv4"  // OpenCV 头文件路径
+                "/usr/local/include/opencv4",
+                "/opt/jai/ebus_sdk/linux-aarch64-arm/include"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/g++",  // 编译器路径
+            "defines": [
+                "_UNIX_",
+                "_LINUX_"
+            ],
+            "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

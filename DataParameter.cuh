@@ -13,6 +13,20 @@
  #include "CommFunc.h"
  #include "ImageRander.h"
  #include <cuda_runtime.h>
+ #include <iomanip>
+#include <PvSampleUtils.h>
+#include <PvDevice.h>
+#include <PvDeviceGEV.h>
+#include <PvDeviceU3V.h>
+#include <PvStream.h>
+#include <PvStreamGEV.h>
+#include <PvStreamU3V.h>
+#include <PvPipeline.h>
+#include <PvBuffer.h>
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <sys/stat.h>
+#include <sys/types.h>
  
  #define CUDA_CHECK(call) {                                                   \
 	 cudaError_t err = call;                                                   \

@@ -34,6 +34,7 @@ __constant__ int d_destHeight;
 float* d_data; 
 
 
+
 void DataParameter::mapToGPU() {
     /**************复制常量变量**************/
     CUDA_CHECK(cudaMemcpyToSymbol(d_rawImageParameter, &m_rawImageParameter, sizeof(RawImageParameter)));

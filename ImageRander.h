@@ -13,7 +13,17 @@
  
  #include "CommFunc.h"
  #include "DataDeal.h"
- 
+ #include <opencv2/opencv.hpp>
+ #include <PvSampleUtils.h>
+ #include <PvSystem.h>
+ #include <PvDevice.h>
+ #include <PvDeviceGEV.h>
+ #include <PvDeviceU3V.h>
+ #include <PvStream.h>
+ #include <PvStreamGEV.h>
+ #include <PvStreamU3V.h>
+ #include <PvPipeline.h>
+ #include <PvBuffer.h>
  //修改了WIDTH和HEIGHT,此处参数只能影响到渲染图的生成效果
  #define MEAN_DISP_LEN_RADIUS 18//平均距离长度 8 注意该参数在需要让计算深度的点尽量都在一个圆内(方型)  10
  #define PATCH_SCALE9 9//路径比例 9

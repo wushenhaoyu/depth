@@ -1,12 +1,25 @@
 #include "ImageRander.h"
 #include "DataParameter.cuh"
 #include <iomanip>
+#include <PvSampleUtils.h>
+#include <PvDevice.h>
+#include <PvDeviceGEV.h>
+#include <PvDeviceU3V.h>
+#include <PvStream.h>
+#include <PvStreamGEV.h>
+#include <PvStreamU3V.h>
+#include <PvPipeline.h>
+#include <PvBuffer.h>
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace std;
 using namespace cv;
 
 
-
+PV_INIT_SIGNAL_HANDLER();
 ImageRander::ImageRander()
 {
 
@@ -70,7 +83,7 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
 
 
 
-
+/*
 
 void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 {
@@ -117,6 +130,217 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
     imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
     saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
     //保存图像会耗费约40ms时间
+}
+*/
+
+
+
+#define BUFFER_COUNT (16)
+
+void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
+    RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
+    MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
+    DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
+
+    // 初始化 eBUS SDK
+    //PV_SAMPLE_INIT();
+ 
+
+    // 选择设备
+    PvString lConnectionID;
+    if (!PvSelectDevice(&lConnectionID)) {
+        cout << "No device selected" << endl;
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+
+    // 连接设备
+    PvResult lResult;
+    PvDevice *lDevice = PvDevice::CreateAndConnect(lConnectionID, &lResult);
+    if (!lDevice || !lResult.IsOK()) {
+        cout << "Unable to connect to device: " << lResult.GetCodeString().GetAscii() << endl;
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+
+    // 打开流
+    PvStream *lStream = PvStream::CreateAndOpen(lConnectionID, &lResult);
+    if (!lStream || !lResult.IsOK()) {
+        cout << "Unable to open stream: " << lResult.GetCodeString().GetAscii() << endl;
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+
+    // 配置流（仅限 GEV 设备）
+    PvDeviceGEV *lDeviceGEV = dynamic_cast<PvDeviceGEV *>(lDevice);
+    if (lDeviceGEV) {
+        PvStreamGEV *lStreamGEV = dynamic_cast<PvStreamGEV *>(lStream);
+        if (lStreamGEV) {
+            lDeviceGEV->NegotiatePacketSize();
+            lDeviceGEV->SetStreamDestination(lStreamGEV->GetLocalIPAddress(), lStreamGEV->GetLocalPort());
+        }
+    }
+
+    // 创建管道
+    PvPipeline *lPipeline = new PvPipeline(lStream);
+    if (lPipeline) {
+        uint32_t lSize = lDevice->GetPayloadSize();
+        lPipeline->SetBufferCount(BUFFER_COUNT);
+        lPipeline->SetBufferSize(lSize);
+    } else {
+        cout << "Failed to create pipeline" << endl;
+        lStream->Close();
+        PvStream::Free(lStream);
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+
+    // 开始采集
+    PvGenParameterArray *lDeviceParams = lDevice->GetParameters();
+    PvGenCommand *lStart = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStart"));
+    PvGenCommand *lStop = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStop"));
+
+    lPipeline->Start();
+    lDevice->StreamEnable();
+    lStart->Execute();
+
+    // 初始化 OpenCV 显示窗口
+    namedWindow("Camera Stream", WINDOW_AUTOSIZE);
+
+    // 保存图像序列的配置
+    bool saveImages = false; // 设为false如果不需保存
+    int frameCount = 0;
+    string outputDir = "./output_frames/";
+    if (saveImages) {
+        mkdir(outputDir.c_str(), 0777); // 创建输出目录
+    }
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cout << "<Press ESC to stop streaming>" << endl;
+
+    while (true) {
+        PvBuffer *lBuffer = NULL;
+        PvResult lOperationResult;
+
+        // 获取帧
+        PvResult lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
+        if (lResult.IsOK() && lOperationResult.IsOK()) {
+            if (lBuffer->GetPayloadType() == PvPayloadTypeImage) {
+                PvImage *lImage = lBuffer->GetImage();
+                uint32_t lWidth = lImage->GetWidth();
+                uint32_t lHeight = lImage->GetHeight();
+                PvPixelType lPixelType = lImage->GetPixelType();
+
+                // 转换为 cv::Mat
+                Mat frame;
+                if (lPixelType == PvPixelMono8) {
+                    frame = Mat(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
+                } else {
+                    cout << "Unsupported pixel type: " << lPixelType << endl;
+                    lPipeline->ReleaseBuffer(lBuffer);
+                    continue;
+                }
+                rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
+                // 裁剪帧
+                Mat inputImgRec = frame(Rect(
+                    rawImageParameter.m_xPixelBeginOffset,
+                    rawImageParameter.m_yPixelBeginOffset,
+                    rawImageParameter.m_recImgWidth,
+                    rawImageParameter.m_recImgHeight
+                )).clone();
+
+                
+
+                // 转换为 CV_32FC3
+                Mat inputImgRecFloat;
+                inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+
+                // 更新 d_inputImgRec
+                size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+                CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+
+                // 计时
+                cudaEventRecord(start);
+
+                // 计算视差均值
+                dim3 blockSize(32, 32);
+                dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x,
+                              (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
+                computeLensMeanDispKernel<<<gridSize, blockSize>>>(d_microImageParameter, d_rawDisp);
+                CUDA_CHECK(cudaGetLastError());
+                CUDA_CHECK(cudaDeviceSynchronize());
+
+                // 渲染视差图
+                //CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float)));
+                imageRander(rawImageParameter, microImageParameter, d_rawDisp, 1);
+
+                // 下载渲染结果
+                Mat randerDisMap(randerMapHeightVal, randerMapWidthVal, CV_32FC1);
+                CUDA_CHECK(cudaMemcpy(randerDisMap.ptr<float>(0), d_randerMap,
+                                      randerMapWidthVal_ * randerMapHeightVal * sizeof(float), cudaMemcpyDeviceToHost));
+                CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 1 * sizeof(float)));
+                // 转换为 CV_8UC1 并应用伪彩色
+                Mat randerDisMapU8;
+                double minVal, maxVal;
+                minMaxLoc(randerDisMap, &minVal, &maxVal);
+                randerDisMap(Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(
+                    randerDisMapU8, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
+                Mat coloredFrame;
+                applyColorMap(randerDisMapU8, coloredFrame, COLORMAP_JET);
+
+                // 显示伪彩色帧
+                imshow("Camera Stream", coloredFrame);
+
+                // 保存图像序列（替代视频写入）
+                if (saveImages) {
+                    char filename[256];
+                    sprintf(filename, "%s/frame_%04d.png", outputDir.c_str(), frameCount++);
+                    imwrite(filename, coloredFrame);
+                    cout << "Saved: " << filename << endl;
+                }
+
+                cudaEventRecord(stop);
+                cudaEventSynchronize(stop);
+                float ms = 0;
+                cudaEventElapsedTime(&ms, start, stop);
+                printf("Frame Processing Time: %.2f ms\n", ms);
+
+                // 检测 ESC 键
+                if (waitKey(1) == 27) {
+                    break;
+                }
+            }
+            lPipeline->ReleaseBuffer(lBuffer);
+        } else {
+            cout << "Failed to retrieve buffer: " << lResult.GetCodeString().GetAscii() << endl;
+        }
+    }
+
+    // 停止采集
+    lStop->Execute();
+    lDevice->StreamDisable();
+    lPipeline->Stop();
+
+    // 释放资源
+    destroyAllWindows();
+    if (saveImages) {
+        cout << "Frames saved to directory: " << outputDir << endl;
+    }
+
+    delete lPipeline;
+    lStream->Close();
+    PvStream::Free(lStream);
+    lDevice->Disconnect();
+    PvDevice::Free(lDevice);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 }
 
 
@@ -525,13 +749,17 @@ void saveSingleChannelGpuMemoryAsImage(float* d_data, int width, int height, con
 
     // 将浮点数据转换为 uchar 数据
     cv::Mat img(height, width, CV_32FC1, h_data);
-	double minVal; double maxVal;
-	minMaxLoc(img, &minVal, &maxVal);
+    double minVal, maxVal;
+    minMaxLoc(img, &minVal, &maxVal);
     cv::Mat img_8u;
-    img(cv::Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(img_8u, CV_8UC1,255.0 / (maxVal - minVal), -minVal*255.0 / (maxVal - minVal)); // 将浮点值 [0, 1] 转换为 [0, 255]
+    img(cv::Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(img_8u, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal)); // 将浮点值 [0, 1] 转换为 [0, 255]
 
-    // 保存图像
-    cv::imwrite(filename, img_8u);
+    // 应用伪色彩
+    cv::Mat img_color;
+    applyColorMap(img_8u, img_color, cv::COLORMAP_JET); // 使用 JET 伪色彩
+
+    // 保存伪彩色图像
+    cv::imwrite(filename, img_color);
 
     // 释放主机内存
     delete[] h_data;

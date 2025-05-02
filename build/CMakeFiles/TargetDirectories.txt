@@ -1,3 +1,0 @@
-/home/jetson/Desktop/depth/build/CMakeFiles/rebuild_cache.dir
-/home/jetson/Desktop/depth/build/CMakeFiles/edit_cache.dir
-/home/jetson/Desktop/depth/build/CMakeFiles/MyProject.dir
