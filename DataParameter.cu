@@ -35,6 +35,7 @@ float* d_data;
 
 
 
+
 void DataParameter::mapToGPU() {
     /**************复制常量变量**************/
     CUDA_CHECK(cudaMemcpyToSymbol(d_rawImageParameter, &m_rawImageParameter, sizeof(RawImageParameter)));
@@ -203,12 +204,247 @@ void DataParameter::mapToGPU() {
     CUDA_CHECK(cudaMemcpy(d_ppRanderMapPatch, h_ppRanderMapPatch, numPatches * sizeof(RanderMapPatch), cudaMemcpyHostToDevice));
 
 }
+PvString lConnectionID;
+PvResult lResult;
+PvDevice* lDevice = nullptr;
+PvStream* lStream = nullptr;
+PvDeviceGEV* lDeviceGEV = nullptr;
+PvPipeline* lPipeline = nullptr;
+PvGenParameterArray* lDeviceParams = nullptr;
+PvGenCommand* lStart = nullptr;
+PvGenCommand* lStop = nullptr;
+PvBuffer* lBuffer = nullptr;
+PvResult lOperationResult;
+// void DataParameter::UploadtoGPU() const
+// {
+// 	lBuffer = NULL;
+//     lOperationResult;
+// 	lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
+//         if (lResult.IsOK() && lOperationResult.IsOK()) {
+// 			PvImage *lImage = lBuffer->GetImage();
+// 			uint32_t lWidth = lImage->GetWidth();
+// 			uint32_t lHeight = lImage->GetHeight();
+// 			PvPixelType lPixelType = lImage->GetPixelType();
 
+// 			Mat frame;
+// 			if (lPixelType == PvPixelMono8) {
+// 				frame = Mat(lHeight, lWidth, CV_8UC3, lImage->GetDataPointer());
+// 			} else {
+// 				cout << "Unsupported pixel type: " << lPixelType << endl;
+// 				lPipeline->ReleaseBuffer(lBuffer);
+// 			}
+// 			rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
+
+// 			Mat inputImgRec = frame(Rect(
+// 				m_rawImageParameter.m_xPixelBeginOffset,
+// 				m_rawImageParameter.m_yPixelBeginOffset,
+// 				m_rawImageParameter.m_recImgWidth,
+// 				m_rawImageParameter.m_recImgHeight
+// 			)).clone();
+// 			imshow("Original", frame);
+
+// 			Mat inputImgRecFloat,inputImgFloat;
+// 			inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+// 			frame.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+// 			size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+// 			CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
+// 			CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+// 			size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
+// 			CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
+// 			CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+// 		}
+// }
+
+
+void DataParameter::UploadtoGPU() const
+{
+    lBuffer = NULL;
+    lOperationResult;
+    lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
+
+    if (lResult.IsOK() && lOperationResult.IsOK()) {
+        PvImage *lImage = lBuffer->GetImage();
+        uint32_t lWidth = lImage->GetWidth();
+        uint32_t lHeight = lImage->GetHeight();
+        PvPixelType lPixelType = lImage->GetPixelType();
+
+        Mat frame;
+        if (lPixelType == PvPixelMono8) {
+            // 1. 正确地以灰度图格式读取
+            Mat gray(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
+
+            // 2. 转换为三通道灰度图
+            cvtColor(gray, frame, COLOR_GRAY2BGR);
+        } else {
+            cout << "Unsupported pixel type: " << lPixelType << endl;
+            lPipeline->ReleaseBuffer(lBuffer);
+            return;  // 加上 return 避免之后继续执行
+        }
+
+        // 图像旋转
+        rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
+
+        // 裁剪区域
+        Mat inputImgRec = frame(Rect(
+            m_rawImageParameter.m_xPixelBeginOffset,
+            m_rawImageParameter.m_yPixelBeginOffset,
+            m_rawImageParameter.m_recImgWidth,
+            m_rawImageParameter.m_recImgHeight
+        )).clone();
+
+        // 显示图像
+        imshow("Original", frame);
+
+
+        // 转换为 float 并上传 GPU
+        Mat inputImgRecFloat, inputImgFloat;
+        inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+        frame.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+
+        size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+        CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
+        CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+
+        size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
+        CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
+        CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+		lPipeline->ReleaseBuffer(lBuffer);
+    }
+	
+}
 
 
 void DataParameter::UpdateImgToGPU() {
-    // 将图像从 CV_8UC3 转换为 CV_32FC3
-    cv::Mat inputImgFloat, inputImgRecFloat;
+	if (!PvSelectDevice(&lConnectionID)) {
+        cout << "No device selected" << endl;
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+	lDevice = PvDevice::CreateAndConnect(lConnectionID, &lResult);
+	lDeviceParams = lDevice->GetParameters();
+		// 禁用 TestPattern 功能
+		PvGenEnum* lTestPattern = dynamic_cast<PvGenEnum*>(lDeviceParams->Get("TestPattern"));
+		if (lTestPattern != nullptr)
+		{
+			lTestPattern->SetValue("Off");
+		}
+		
+		// 设置图像宽度和高度
+		lResult = lDeviceParams->SetIntegerValue("Width", 1920);
+		if (!lResult.IsOK())
+		{
+			cout << "Failed to set Width: " << lResult.GetCodeString().GetAscii() << endl;
+		}
+		
+		lResult = lDeviceParams->SetIntegerValue("Height", 1080);
+		if (!lResult.IsOK())
+		{
+			cout << "Failed to set Height: " << lResult.GetCodeString().GetAscii() << endl;
+		}
+    if (!lDevice || !lResult.IsOK()) {
+        cout << "Unable to connect to device: " << lResult.GetCodeString().GetAscii() << endl;
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+	lStream = PvStream::CreateAndOpen(lConnectionID, &lResult);
+    if (!lStream || !lResult.IsOK()) {
+        cout << "Unable to open stream: " << lResult.GetCodeString().GetAscii() << endl;
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+	lDeviceGEV = dynamic_cast<PvDeviceGEV *>(lDevice);
+    if (lDeviceGEV) {
+        PvStreamGEV *lStreamGEV = dynamic_cast<PvStreamGEV *>(lStream);
+        if (lStreamGEV) {
+            lDeviceGEV->NegotiatePacketSize();
+            lDeviceGEV->SetStreamDestination(lStreamGEV->GetLocalIPAddress(), lStreamGEV->GetLocalPort());
+        }
+    }
+	lPipeline = new PvPipeline(lStream);
+    if (lPipeline) {
+        uint32_t lSize = lDevice->GetPayloadSize();
+        lPipeline->SetBufferCount(BUFFER_COUNT);
+        lPipeline->SetBufferSize(lSize);
+    } else {
+        cout << "Failed to create pipeline" << endl;
+        lStream->Close();
+        PvStream::Free(lStream);
+        PvDevice::Free(lDevice);
+        //PV_SAMPLE_TERMINATE();
+        return;
+    }
+	PvGenEnum *lPixelFormat = dynamic_cast<PvGenEnum *>(lDeviceParams->Get("PixelFormat"));
+	int64_t lWidth = 1920, lHeight = 1080;
+	PvGenCommand* lAcquisitionStop = dynamic_cast<PvGenCommand*>(lDeviceParams->Get("AcquisitionStop"));
+	if (lAcquisitionStop != nullptr)
+	{
+		lAcquisitionStop->Execute();
+	}
+	
+
+
+	lDeviceParams->GetIntegerValue( "Width", lWidth );
+    lDeviceParams->GetIntegerValue( "Height", lHeight );
+	lStart = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStart"));
+    lStop = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStop"));
+	lPipeline->Start();
+    lDevice->StreamEnable();
+    lStart->Execute();
+
+	lBuffer = NULL;
+    lOperationResult;
+
+	lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
+        if (lResult.IsOK() && lOperationResult.IsOK()) {
+			PvImage *lImage = lBuffer->GetImage();
+			uint32_t lWidth = lImage->GetWidth();
+			uint32_t lHeight = lImage->GetHeight();
+
+			PvPixelType lPixelType = lImage->GetPixelType();
+
+			Mat frame;
+			if (lPixelType == PvPixelMono8) {
+				frame = Mat(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
+				cv::cvtColor(frame, frame, cv::COLOR_GRAY2BGR);
+			} else {
+				cout << "Unsupported pixel type: " << lPixelType << endl;
+				lPipeline->ReleaseBuffer(lBuffer);
+			}
+			imwrite("tt.bmp", frame);
+			rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
+			frame.convertTo(frame, CV_32FC3, 1.0f / 255.0f);
+			//保存图像
+			Mat inputImgRec = frame(Rect(
+				m_rawImageParameter.m_xPixelBeginOffset,
+				m_rawImageParameter.m_yPixelBeginOffset,
+				m_rawImageParameter.m_recImgWidth,
+				m_rawImageParameter.m_recImgHeight
+			)).clone();
+
+			Mat inputImgRecFloat,inputImgFloat;
+			inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+			frame.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+			size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+			CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
+			CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+			size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
+			CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
+			CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+			cv::Mat im_gray,im_grad;
+			cv::cvtColor(inputImgRec, im_gray, cv::COLOR_RGB2GRAY);
+			cv::Sobel(im_gray, im_grad, CV_32F, 1, 0, 1);
+			im_grad += 0.5;
+			size_t im_grad_size = im_grad.total() * im_grad.elemSize();
+			CUDA_CHECK(cudaMalloc((void**)&d_gradImg, im_grad_size));
+			CUDA_CHECK(cudaMemcpy(d_gradImg, im_grad.ptr<float>(0), im_grad_size, cudaMemcpyHostToDevice));
+
+		}
+
+	
+	// 将图像从 CV_8UC3 转换为 CV_32FC3
+    /*cv::Mat inputImgFloat, inputImgRecFloat;
 	cv::Mat m_inputImg_,m_gradImg;
 	m_inputImg.convertTo(m_inputImg_, CV_32FC3, 1 / 255.0f);
     cv::Mat im_gray, tmp;
@@ -237,7 +473,7 @@ void DataParameter::UpdateImgToGPU() {
 
     // 将图像数据从主机复制到设备
     CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));*/
 }
 
 

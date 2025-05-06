@@ -157,6 +157,7 @@
 	 void srcImageSet(std::string dataFolderPath, std::string inputImgName);
 	 void mapToGPU();
 	 void UpdateImgToGPU();
+	 void UploadtoGPU() const;
  
 	 RawImageParameter getRawImageParameter() const
 	 {
@@ -204,7 +205,6 @@
 	 int m_filterRadius; //���Ӳ���˲��뾶����Ҫ�Ƿ����˲��ۺϣ�
  };
  
-
  extern __constant__ RawImageParameter d_rawImageParameter;
  extern __constant__ DisparityParameter d_disparityParameter;
  extern FilterParameterDevice* d_filterPatameterDevice; 
@@ -235,5 +235,21 @@
  extern __constant__ int d_destWidth;
  extern __constant__ int d_destHeight;
  extern float* d_data; 
+
+
+
+
+ #define BUFFER_COUNT (16)
+extern PvString lConnectionID;
+extern PvResult lResult;
+extern PvDevice *lDevice;
+extern PvStream *lStream;
+extern PvDeviceGEV *lDeviceGEV;
+extern PvPipeline *lPipeline;
+extern PvGenParameterArray *lDeviceParams;
+extern PvGenCommand *lStart;
+extern PvGenCommand *lStop;
+extern PvBuffer *lBuffer;
+extern PvResult lOperationResult;
 
  #endif

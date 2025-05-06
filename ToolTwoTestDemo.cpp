@@ -214,16 +214,16 @@ void ToolTwoTestDemo::data4compute()
 void ToolTwoTestDemo::data5compute()
 {//���� 0321_6
 	//��һ������Rawͼ�������ز���������
-	int xCenterStartOffset = 2;
-	int yCenterStartOffset = 2; //x��y�����ϵ�ͼ��ƫ��ֵ
-	int xCenterEndOffset = 2;
-	int yCenterEndOffset = 2; //��ȡ��ͼ����Ⱥ͸߶�
+	int xCenterStartOffset = 1;
+	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+	int xCenterEndOffset = 1;
+	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
 
 
 	/**�������� **/
 	
 	int filterRadius = 6; //�˲��뾶
-	float circleDiameter = 40.0; //СԲ����
+	float circleDiameter = 44.0; //СԲ����
 	float circleNarrow = 1.5; //��������ֵ
 	int dispMin = 5; //�Ӳ���Сֵ
 	int dispMax = 14; //�Ӳ����ֵ
@@ -242,8 +242,8 @@ void ToolTwoTestDemo::data5compute()
 	
 
 	string folderName = "/home/jetson/Desktop/depth/205_66";//����м������ļ���
-	string inputRawImg = "66_5.bmp";
-	string centerPointFile = "points.txt";
+	string inputRawImg = "new.bmp";
+	string centerPointFile = "points_new.txt";
 
 	//�ڶ������������ݳ�ʼ��
 	DepthComputeToolTwo depthComputeToolTwo;

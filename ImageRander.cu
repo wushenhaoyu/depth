@@ -14,8 +14,10 @@
 #include <opencv2/opencv.hpp>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 using namespace cv;
 
 
@@ -76,16 +78,16 @@ __global__ void computeLensMeanDispKernel(MicroImageParameterDevice* d_microImag
         }
 
         float meanDisp = sum / count ;
-        d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x] = fmax(meanDisp, 9.0f);
+        d_ppLensMeanDisp[y * d_rawImageParameter.m_xLensNum + x] = fmax(meanDisp, 11.0f);
 
     }
 }
 
 
 
-/*
 
-void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
+
+/*void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
     MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
@@ -124,91 +126,65 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter)
 
 
     cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
     imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
     saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapWidthVal_,randerMapHeightVal, "./res/randerSceneMap.bmp");
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
+    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
+
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
+    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapWidthVal_,randerMapHeightVal, "./res/randerSceneMap.bmp");
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
+    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
+
+
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
+    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapWidthVal_,randerMapHeightVal, "./res/randerSceneMap.bmp");
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
+    saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
+
+
+    cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+    imageRander(rawImageParameter, microImageParameter,d_inputImgRec,3);
+    saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapWidthVal_,randerMapHeightVal, "./res/randerSceneMap.bmp");
+    cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
     cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float));
     imageRander(rawImageParameter, microImageParameter,d_rawDisp,1);
     saveSingleChannelGpuMemoryAsImage(d_randerMap, randerMapWidthVal_,randerMapHeightVal, "./res/randerDisMap.bmp");
     //保存图像会耗费约40ms时间
-}
-*/
+}*/
 
 
 
-#define BUFFER_COUNT (16)
 
 void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
     RawImageParameter rawImageParameter = dataParameter.getRawImageParameter();
     MicroImageParameter microImageParameter = dataParameter.getMicroImageParameter();
     DisparityParameter disparityParameter = dataParameter.getDisparityParameter();
 
-    // 初始化 eBUS SDK
-    //PV_SAMPLE_INIT();
  
 
-    // 选择设备
-    PvString lConnectionID;
-    if (!PvSelectDevice(&lConnectionID)) {
-        cout << "No device selected" << endl;
-        //PV_SAMPLE_TERMINATE();
-        return;
-    }
+    steady_clock::time_point lastTime = steady_clock::now();
+    float fps = 0.0f;
 
-    // 连接设备
-    PvResult lResult;
-    PvDevice *lDevice = PvDevice::CreateAndConnect(lConnectionID, &lResult);
-    if (!lDevice || !lResult.IsOK()) {
-        cout << "Unable to connect to device: " << lResult.GetCodeString().GetAscii() << endl;
-        PvDevice::Free(lDevice);
-        //PV_SAMPLE_TERMINATE();
-        return;
-    }
+    // 初始化 OpenCV 显示窗口 设置为固定值
+    namedWindow("Depth", WINDOW_AUTOSIZE);
+    namedWindow("Show", WINDOW_AUTOSIZE);
+    namedWindow("Original", WINDOW_NORMAL);
+    resizeWindow("Original", 1080, 1920);
 
-    // 打开流
-    PvStream *lStream = PvStream::CreateAndOpen(lConnectionID, &lResult);
-    if (!lStream || !lResult.IsOK()) {
-        cout << "Unable to open stream: " << lResult.GetCodeString().GetAscii() << endl;
-        PvDevice::Free(lDevice);
-        //PV_SAMPLE_TERMINATE();
-        return;
-    }
 
-    // 配置流（仅限 GEV 设备）
-    PvDeviceGEV *lDeviceGEV = dynamic_cast<PvDeviceGEV *>(lDevice);
-    if (lDeviceGEV) {
-        PvStreamGEV *lStreamGEV = dynamic_cast<PvStreamGEV *>(lStream);
-        if (lStreamGEV) {
-            lDeviceGEV->NegotiatePacketSize();
-            lDeviceGEV->SetStreamDestination(lStreamGEV->GetLocalIPAddress(), lStreamGEV->GetLocalPort());
-        }
-    }
-
-    // 创建管道
-    PvPipeline *lPipeline = new PvPipeline(lStream);
-    if (lPipeline) {
-        uint32_t lSize = lDevice->GetPayloadSize();
-        lPipeline->SetBufferCount(BUFFER_COUNT);
-        lPipeline->SetBufferSize(lSize);
-    } else {
-        cout << "Failed to create pipeline" << endl;
-        lStream->Close();
-        PvStream::Free(lStream);
-        PvDevice::Free(lDevice);
-        //PV_SAMPLE_TERMINATE();
-        return;
-    }
-
-    // 开始采集
-    PvGenParameterArray *lDeviceParams = lDevice->GetParameters();
-    PvGenCommand *lStart = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStart"));
-    PvGenCommand *lStop = dynamic_cast<PvGenCommand *>(lDeviceParams->Get("AcquisitionStop"));
-
-    lPipeline->Start();
-    lDevice->StreamEnable();
-    lStart->Execute();
-
-    // 初始化 OpenCV 显示窗口
-    namedWindow("Camera Stream", WINDOW_AUTOSIZE);
 
     // 保存图像序列的配置
     bool saveImages = false; // 设为false如果不需保存
@@ -225,101 +201,100 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
     cout << "<Press ESC to stop streaming>" << endl;
 
     while (true) {
-        PvBuffer *lBuffer = NULL;
-        PvResult lOperationResult;
+        cudaEventRecord(start);   
+        cudaEvent_t uploadStart, uploadStop;
+        cudaEventCreate(&uploadStart);
+        cudaEventCreate(&uploadStop);
 
-        // 获取帧
-        PvResult lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
-        if (lResult.IsOK() && lOperationResult.IsOK()) {
-            if (lBuffer->GetPayloadType() == PvPayloadTypeImage) {
-                PvImage *lImage = lBuffer->GetImage();
-                uint32_t lWidth = lImage->GetWidth();
-                uint32_t lHeight = lImage->GetHeight();
-                PvPixelType lPixelType = lImage->GetPixelType();
+        cudaEventRecord(uploadStart);
+        dataParameter.UploadtoGPU();
 
-                // 转换为 cv::Mat
-                Mat frame;
-                if (lPixelType == PvPixelMono8) {
-                    frame = Mat(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
-                } else {
-                    cout << "Unsupported pixel type: " << lPixelType << endl;
-                    lPipeline->ReleaseBuffer(lBuffer);
-                    continue;
-                }
-                rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
-                // 裁剪帧
-                Mat inputImgRec = frame(Rect(
-                    rawImageParameter.m_xPixelBeginOffset,
-                    rawImageParameter.m_yPixelBeginOffset,
-                    rawImageParameter.m_recImgWidth,
-                    rawImageParameter.m_recImgHeight
-                )).clone();
+        cudaEventRecord(uploadStop);
+        cudaEventSynchronize(uploadStop);//
 
-                
+        float uploadTime = 0;
+        cudaEventElapsedTime(&uploadTime, uploadStart, uploadStop);
+        printf("DataParameter UploadtoGPU Time: %.2f ms\n", uploadTime);
 
-                // 转换为 CV_32FC3
-                Mat inputImgRecFloat;
-                inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+        cudaEventDestroy(uploadStart);
+        cudaEventDestroy(uploadStop);
+      
 
-                // 更新 d_inputImgRec
-                size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
-                CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+        
 
-                // 计时
-                cudaEventRecord(start);
+        // 计算视差均值
+        dim3 blockSize(16,16);
+        dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x,
+                      (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
+        computeLensMeanDispKernel<<<gridSize, blockSize>>>(d_microImageParameter, d_rawDisp);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
+        CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float)));     
+        cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+        imageRander(rawImageParameter, microImageParameter, d_inputImgRec, 3);
+        //saveThreeChannelGpuMemoryAsImage(d_randerMap,  randerMapWidthVal_,randerMapHeightVal, "./res/randerSceneMap.bmp");   
+        Mat randerDisMap(randerMapHeightVal, randerMapWidthVal, CV_32FC3);
+        
+        CUDA_CHECK(cudaMemcpy(randerDisMap.ptr<float>(0), d_randerMap,
+        randerMapWidthVal_ * randerMapHeightVal * sizeof(float) * 3, cudaMemcpyDeviceToHost));
+        Mat randerDisMapU8;
 
-                // 计算视差均值
-                dim3 blockSize(32, 32);
-                dim3 gridSize((rawImageParameter.m_xLensNum + blockSize.x - 1) / blockSize.x,
-                              (rawImageParameter.m_yLensNum + blockSize.y - 1) / blockSize.y);
-                computeLensMeanDispKernel<<<gridSize, blockSize>>>(d_microImageParameter, d_rawDisp);
-                CUDA_CHECK(cudaGetLastError());
-                CUDA_CHECK(cudaDeviceSynchronize());
+        randerDisMap(Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(
+            randerDisMapU8, CV_8UC3, 255.0, 0.0);
+        randerDisMapU8 = randerDisMapU8(Rect(microImageParameter.m_circleDiameter / 2, 0, 
+                             randerMapWidthVal_ - microImageParameter.m_circleDiameter, 
+                             randerMapHeightVal));
+        
 
-                // 渲染视差图
-                //CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float)));
-                imageRander(rawImageParameter, microImageParameter, d_rawDisp, 1);
+        // 计算 FPS
+        steady_clock::time_point currentTime = steady_clock::now();
+        float elapsed = duration_cast<duration<float>>(currentTime - lastTime).count();
+        lastTime = currentTime;
+        if (elapsed > 0)
+            fps = 1.0f / elapsed;
 
-                // 下载渲染结果
-                Mat randerDisMap(randerMapHeightVal, randerMapWidthVal, CV_32FC1);
-                CUDA_CHECK(cudaMemcpy(randerDisMap.ptr<float>(0), d_randerMap,
-                                      randerMapWidthVal_ * randerMapHeightVal * sizeof(float), cudaMemcpyDeviceToHost));
-                CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 1 * sizeof(float)));
-                // 转换为 CV_8UC1 并应用伪彩色
-                Mat randerDisMapU8;
-                double minVal, maxVal;
-                minMaxLoc(randerDisMap, &minVal, &maxVal);
-                randerDisMap(Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(
-                    randerDisMapU8, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
-                Mat coloredFrame;
-                applyColorMap(randerDisMapU8, coloredFrame, COLORMAP_JET);
+        // 在图像上叠加 FPS 信息
+        string fpsText = format("FPS: %.2f", fps);
+        putText(randerDisMapU8, fpsText, Point(20, 40), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 255, 0), 2);
+        
+        imshow("Show", randerDisMapU8); 
 
-                // 显示伪彩色帧
-                imshow("Camera Stream", coloredFrame);
+        /*randerDisMap = Mat(randerMapHeightVal, randerMapWidthVal, CV_32FC1);
+        CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float)));  
+        cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
+        imageRander(rawImageParameter, microImageParameter, d_rawDisp, 1);    
+        // 下载渲染结果
+        CUDA_CHECK(cudaMemcpy(randerDisMap.ptr<float>(0), d_randerMap,
+                              randerMapWidthVal_ * randerMapHeightVal * sizeof(float), cudaMemcpyDeviceToHost));
+        // 转换为 CV_8UC1 并应用伪彩色
+        double minVal, maxVal;
+        minMaxLoc(randerDisMap, &minVal, &maxVal);
+        randerDisMap(Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(
+            randerDisMapU8, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
+        Mat coloredFrame;
+        applyColorMap(randerDisMapU8, coloredFrame, COLORMAP_JET);      
+        // 显示伪彩色帧
+        imshow("Depth", randerDisMapU8);   */
 
-                // 保存图像序列（替代视频写入）
-                if (saveImages) {
-                    char filename[256];
-                    sprintf(filename, "%s/frame_%04d.png", outputDir.c_str(), frameCount++);
-                    imwrite(filename, coloredFrame);
-                    cout << "Saved: " << filename << endl;
-                }
+        // 保存图像序列（替代视频写入）
+        /*if (saveImages) {
+            char filename[256];
+            sprintf(filename, "%s/frame_%04d.png", outputDir.c_str(), frameCount++);
+            imwrite(filename, coloredFrame);
+            cout << "Saved: " << filename << endl;
+        }       */
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float ms = 0;
+        cudaEventElapsedTime(&ms, start, stop);
+        printf("Frame Processing Time: %.2f ms\n", ms);
 
-                cudaEventRecord(stop);
-                cudaEventSynchronize(stop);
-                float ms = 0;
-                cudaEventElapsedTime(&ms, start, stop);
-                printf("Frame Processing Time: %.2f ms\n", ms);
-
-                // 检测 ESC 键
-                if (waitKey(1) == 27) {
-                    break;
-                }
-            }
-            lPipeline->ReleaseBuffer(lBuffer);
-        } else {
-            cout << "Failed to retrieve buffer: " << lResult.GetCodeString().GetAscii() << endl;
+     
+        // 检测 ESC 键
+        if (waitKey(1) == 27) {
+            break;
         }
+
     }
 
     // 停止采集
