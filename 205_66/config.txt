@@ -1,0 +1,14 @@
+xCenterStartOffset=1
+yCenterStartOffset=1
+xCenterEndOffset=1
+yCenterEndOffset=1
+filterRadius=6
+circleDiameter=44.0
+circleNarrow=1.5
+dispMin=5
+dispMax=14
+dispStep=0.25
+folderName=/home/jetson/Desktop/depth/205_66
+inputRawImg=new.bmp
+centerPointFile=points_new.txt
+

@@ -6,7 +6,9 @@
 
 
 
-
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include "ToolTwoTestDemo.h"
 #include "DepthComputeToolTwo.h"
 
@@ -22,6 +24,37 @@ ToolTwoTestDemo::ToolTwoTestDemo()
 ToolTwoTestDemo::~ToolTwoTestDemo()
 {
 }
+
+
+DepthParams ToolTwoTestDemo::loadDepthParams(const std::string& path) {
+    DepthParams params;
+    std::ifstream file(path);
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::istringstream ss(line);
+        std::string key, value;
+        if (std::getline(ss, key, '=') && std::getline(ss, value)) {
+            if (key == "xCenterStartOffset") params.xCenterStartOffset = std::stoi(value);
+            else if (key == "yCenterStartOffset") params.yCenterStartOffset = std::stoi(value);
+            else if (key == "xCenterEndOffset") params.xCenterEndOffset = std::stoi(value);
+            else if (key == "yCenterEndOffset") params.yCenterEndOffset = std::stoi(value);
+            else if (key == "filterRadius") params.filterRadius = std::stoi(value);
+            else if (key == "circleDiameter") params.circleDiameter = std::stof(value);
+            else if (key == "circleNarrow") params.circleNarrow = std::stof(value);
+            else if (key == "dispMin") params.dispMin = std::stoi(value);
+            else if (key == "dispMax") params.dispMax = std::stoi(value);
+            else if (key == "dispStep") params.dispStep = std::stof(value);
+            else if (key == "folderName") params.folderName = value;
+            else if (key == "inputRawImg") params.inputRawImg = value;
+            else if (key == "centerPointFile") params.centerPointFile = value;
+        }
+    }
+
+    return params;
+}
+
+
 
 void ToolTwoTestDemo::data1compute()
 {//����0321_2
@@ -211,46 +244,83 @@ void ToolTwoTestDemo::data4compute()
 	//������ ����ȫ���Ż�Matlab����
 }
 
+// void ToolTwoTestDemo::data5compute()
+// {//���� 0321_6
+// 	//��һ������Rawͼ�������ز���������
+// 	int xCenterStartOffset = 1;
+// 	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
+// 	int xCenterEndOffset = 1;
+// 	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+
+
+// 	/**�������� **/
+	
+// 	int filterRadius = 6; //�˲��뾶
+// 	float circleDiameter = 44.0; //СԲ����
+// 	float circleNarrow = 1.5; //��������ֵ
+// 	int dispMin = 5; //�Ӳ���Сֵ
+// 	int dispMax = 14; //�Ӳ����ֵ
+// 	float dispStep = 0.25; //�Ӳ����ֵ
+	
+
+// 	/*ֻ����һ���ؾ۽�ͼ�Ĳ���*/
+// 	/*
+// 	int filterRadius = 2; //�˲��뾶
+// 	float circleDiameter = 2.0; //СԲ����
+// 	float circleNarrow = 1.0; //��������ֵ
+// 	int dispMin = 12; //�Ӳ���Сֵ
+// 	int dispMax = 13; //�Ӳ����ֵ
+// 	float dispStep = 0.5; //�Ӳ����ֵ
+// 	*/
+	
+
+// 	string folderName = "/home/jetson/Desktop/depth/205_66";//����м������ļ���
+// 	string inputRawImg = "new.bmp";
+// 	string centerPointFile = "points_new.txt";
+
+// 	//�ڶ������������ݳ�ʼ��
+// 	DepthComputeToolTwo depthComputeToolTwo;
+// 	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
+// 		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
+
+// 	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+// #ifndef SCENE_DEPTH_COMPUTE
+// 	depthComputeToolTwo.rawImageDisparityCompute();
+
+// 	//���Ĳ�������Matlab��������ӿ׾�ͼ�����Ⱦ��Ȼ���ӿ׾�ͼ���ӳ���ļ����ڵ�ǰĿ¼��
+// #else
+// 	//���岽�����г�����ȵļ���,ע���л�ǰ��ĺ궨�壬ȡ��ע��SCENE_DEPTH_COMPUTE����
+
+// 	string referSubImgName = "subAperatureImg.bmp";//�ӿ׾�ͼ��
+// 	std::string referDispXmlName = "dispAfterSTCAAgainLocalSmooth.xml"; //�Ӳ��ļ�
+// 	std::string referMaskXmlName = "confidentMatMask.xml"; //���Ŷ��ļ�
+// 	string renderPointsMapping = "renderPointsMapping.txt";//��Ⱦ��ӳ���
+// 	depthComputeToolTwo.sceneDepthCompute(referSubImgName, referDispXmlName, referMaskXmlName, renderPointsMapping);
+// #endif
+
+// 	//������ ����ȫ���Ż�Matlab����
+// }
+
 void ToolTwoTestDemo::data5compute()
 {//���� 0321_6
-	//��һ������Rawͼ�������ز���������
-	int xCenterStartOffset = 1;
-	int yCenterStartOffset = 1; //x��y�����ϵ�ͼ��ƫ��ֵ
-	int xCenterEndOffset = 1;
-	int yCenterEndOffset = 1; //��ȡ��ͼ����Ⱥ͸߶�
+	DepthParams params = loadDepthParams("config.txt");
 
-
-	/**�������� **/
-	
-	int filterRadius = 6; //�˲��뾶
-	float circleDiameter = 44.0; //СԲ����
-	float circleNarrow = 1.5; //��������ֵ
-	int dispMin = 5; //�Ӳ���Сֵ
-	int dispMax = 14; //�Ӳ����ֵ
-	float dispStep = 0.25; //�Ӳ����ֵ
-	
-
-	/*ֻ����һ���ؾ۽�ͼ�Ĳ���*/
-	/*
-	int filterRadius = 2; //�˲��뾶
-	float circleDiameter = 2.0; //СԲ����
-	float circleNarrow = 1.0; //��������ֵ
-	int dispMin = 12; //�Ӳ���Сֵ
-	int dispMax = 13; //�Ӳ����ֵ
-	float dispStep = 0.5; //�Ӳ����ֵ
-	*/
-	
-
-	string folderName = "/home/jetson/Desktop/depth/205_66";//����м������ļ���
-	string inputRawImg = "new.bmp";
-	string centerPointFile = "points_new.txt";
-
-	//�ڶ������������ݳ�ʼ��
-	DepthComputeToolTwo depthComputeToolTwo;
-	depthComputeToolTwo.parameterInit(folderName, centerPointFile, inputRawImg, yCenterStartOffset, xCenterStartOffset, yCenterEndOffset, xCenterEndOffset
-		, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);
-
-	//������������Rawͼ���Ӳ���Ŷ�mask���㣬ע���л��궨�壬ע�͵�SCENE_DEPTH_COMPUTE�Ķ��弴��
+    DepthComputeToolTwo depthComputeToolTwo;
+    depthComputeToolTwo.parameterInit(
+        params.folderName,
+        params.centerPointFile,
+        params.inputRawImg,
+        params.yCenterStartOffset,
+        params.xCenterStartOffset,
+        params.yCenterEndOffset,
+        params.xCenterEndOffset,
+        params.filterRadius,
+        params.circleDiameter,
+        params.circleNarrow,
+        params.dispMin,
+        params.dispMax,
+        params.dispStep
+    );
 #ifndef SCENE_DEPTH_COMPUTE
 	depthComputeToolTwo.rawImageDisparityCompute();
 
@@ -267,7 +337,6 @@ void ToolTwoTestDemo::data5compute()
 
 	//������ ����ȫ���Ż�Matlab����
 }
-
 
 void ToolTwoTestDemo::data6compute()
 {

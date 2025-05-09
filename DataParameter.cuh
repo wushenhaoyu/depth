@@ -252,4 +252,15 @@ extern PvGenCommand *lStop;
 extern PvBuffer *lBuffer;
 extern PvResult lOperationResult;
 
+
+struct RanderParams {
+    int meanDispLenRadius = 18;
+    int patchScale = 9;
+    float renderScale = 0.9;
+    int destWidth = 44;
+    int destHeight = 44;
+};
+bool loadParamsFromTxt(const std::string& path, RanderParams& params);
+
+extern RanderParams randerParams;
  #endif

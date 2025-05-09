@@ -1,6 +1,7 @@
 #include "DataParameter.cuh"
+#include <chrono>
 using namespace cv;
-
+using namespace std::chrono;
 using namespace std;
 
 
@@ -32,6 +33,29 @@ __constant__ float d_randerScale;
 __constant__ int d_destWidth;
 __constant__ int d_destHeight;
 float* d_data; 
+RanderParams randerParams;
+
+bool loadParamsFromTxt(const std::string& path, RanderParams& params) {
+    std::ifstream infile(path);
+    if (!infile.is_open()) return false;
+
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string key;
+        if (std::getline(iss, key, '=')) {
+            std::string value;
+            if (std::getline(iss, value)) {
+                if (key == "RanderParams.meanDispLenRadius") params.meanDispLenRadius = std::stoi(value);
+                else if (key == "PATCH_SCALE9") params.patchScale = std::stoi(value);
+                else if (key == "RANDER_SCALE") params.renderScale = std::stof(value);
+                else if (key == "DEST_WIDTH") params.destWidth = std::stoi(value);
+                else if (key == "DEST_HEIGHT") params.destHeight = std::stoi(value);
+            }
+        }
+    }
+    return true;
+}
 
 
 
@@ -257,60 +281,89 @@ PvResult lOperationResult;
 
 
 void DataParameter::UploadtoGPU() const
-{
-    lBuffer = NULL;
-    lOperationResult;
-    lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
+{	
+	static steady_clock::time_point lastTime = steady_clock::now();
+	static float fps = 0.0f;
 
-    if (lResult.IsOK() && lOperationResult.IsOK()) {
-        PvImage *lImage = lBuffer->GetImage();
-        uint32_t lWidth = lImage->GetWidth();
-        uint32_t lHeight = lImage->GetHeight();
-        PvPixelType lPixelType = lImage->GetPixelType();
+	lBuffer = NULL;
+	lOperationResult;
 
-        Mat frame;
-        if (lPixelType == PvPixelMono8) {
-            // 1. 正确地以灰度图格式读取
-            Mat gray(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
+	auto startTime = steady_clock::now(); // Start timing
 
-            // 2. 转换为三通道灰度图
-            cvtColor(gray, frame, COLOR_GRAY2BGR);
-        } else {
-            cout << "Unsupported pixel type: " << lPixelType << endl;
-            lPipeline->ReleaseBuffer(lBuffer);
-            return;  // 加上 return 避免之后继续执行
-        }
+	lResult = lPipeline->RetrieveNextBuffer(&lBuffer, 1000, &lOperationResult);
 
-        // 图像旋转
-        rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
+	if (lResult.IsOK() && lOperationResult.IsOK()) {
+		auto retrieveTime = steady_clock::now(); // Time after retrieving buffer
+		cout << "Retrieve buffer time: " << duration_cast<milliseconds>(retrieveTime - startTime).count() << " ms" << endl;
 
-        // 裁剪区域
-        Mat inputImgRec = frame(Rect(
-            m_rawImageParameter.m_xPixelBeginOffset,
-            m_rawImageParameter.m_yPixelBeginOffset,
-            m_rawImageParameter.m_recImgWidth,
-            m_rawImageParameter.m_recImgHeight
-        )).clone();
+		PvImage *lImage = lBuffer->GetImage();
+		uint32_t lWidth = lImage->GetWidth();
+		uint32_t lHeight = lImage->GetHeight();
+		PvPixelType lPixelType = lImage->GetPixelType();
 
-        // 显示图像
-        imshow("Original", frame);
+		Mat frame;
+		if (lPixelType == PvPixelMono8) {
+			// 1. 正确地以灰度图格式读取
+			Mat gray(lHeight, lWidth, CV_8UC1, lImage->GetDataPointer());
 
+			// 2. 转换为三通道灰度图
+			cvtColor(gray, frame, COLOR_GRAY2BGR);
+		} else {
+			cout << "Unsupported pixel type: " << lPixelType << endl;
+			lPipeline->ReleaseBuffer(lBuffer);
+			return;  // 加上 return 避免之后继续执行
+		}
 
-        // 转换为 float 并上传 GPU
-        Mat inputImgRecFloat, inputImgFloat;
-        inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
-        frame.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+		auto conversionTime = steady_clock::now(); // Time after conversion
+		cout << "Image conversion time: " << duration_cast<milliseconds>(conversionTime - retrieveTime).count() << " ms" << endl;
 
-        size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
-        CUDA_CHECK(cudaMalloc((void**)&d_inputImgRec, inputImgRecSize));
-        CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+		// 图像旋转
+		rotate(frame, frame, ROTATE_90_COUNTERCLOCKWISE);
 
-        size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
-        CUDA_CHECK(cudaMalloc((void**)&d_inputImg, inputImgSize));
-        CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+		auto rotationTime = steady_clock::now(); // Time after rotation
+		cout << "Image rotation time: " << duration_cast<milliseconds>(rotationTime - conversionTime).count() << " ms" << endl;
+
+		// 计算 FPS
+		steady_clock::time_point currentTime = steady_clock::now();
+		float elapsed = duration_cast<duration<float>>(currentTime - lastTime).count();
+		lastTime = currentTime;
+		if (elapsed > 0)
+			fps = 1.0f / elapsed;
+		string fpsText = format("FPS: %.2f", fps);
+
+		// 在图像上绘制 FPS
+		putText(frame, fpsText, Point(20, 40), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 255, 0), 2);
+
+		// 裁剪区域
+		Mat inputImgRec = frame(Rect(
+			m_rawImageParameter.m_xPixelBeginOffset,
+			m_rawImageParameter.m_yPixelBeginOffset,
+			m_rawImageParameter.m_recImgWidth,
+			m_rawImageParameter.m_recImgHeight
+		)).clone();
+
+		auto cropTime = steady_clock::now(); // Time after cropping
+		cout << "Image cropping time: " << duration_cast<milliseconds>(cropTime - rotationTime).count() << " ms" << endl;
+
+		// 显示图像
+		imshow("Original", frame);
+
+		// 转换为 float 并上传 GPU
+		Mat inputImgRecFloat, inputImgFloat;
+		inputImgRec.convertTo(inputImgRecFloat, CV_32FC3, 1.0f / 255.0f);
+		frame.convertTo(inputImgFloat, CV_32FC3, 1.0f / 255.0f);
+
+		size_t inputImgRecSize = inputImgRecFloat.total() * inputImgRecFloat.elemSize();
+		CUDA_CHECK(cudaMemcpy(d_inputImgRec, inputImgRecFloat.ptr<float>(0), inputImgRecSize, cudaMemcpyHostToDevice));
+
+		size_t inputImgSize = inputImgFloat.total() * inputImgFloat.elemSize();
+		CUDA_CHECK(cudaMemcpy(d_inputImg, inputImgFloat.ptr<float>(0), inputImgSize, cudaMemcpyHostToDevice));
+
+		auto uploadTime = steady_clock::now(); // Time after uploading to GPU
+		cout << "GPU upload time: " << duration_cast<milliseconds>(uploadTime - cropTime).count() << " ms" << endl;
+
 		lPipeline->ReleaseBuffer(lBuffer);
-    }
-	
+	}
 }
 
 
@@ -540,6 +593,7 @@ void DataParameter::init(std::string dataFolderName, std::string centerPointFile
 	int yCenterBeginOffset, int xCenterBeginOffset, int yCenterEndOffset, int xCenterEndOffset,
 	int filterRadius, float circleDiameter, float circleNarrow, int dispMin, int dispMax, float dispStep)
 {
+	loadParamsFromTxt("RanderConfig.txt",randerParams);
 	lensCenterPointsInit(dataFolderName, centerPointFileName);
 	validLensCenterInit(yCenterBeginOffset, xCenterBeginOffset, yCenterEndOffset, xCenterEndOffset);
 	imageBaseMessageInit(inputImgName, filterRadius, circleDiameter, circleNarrow, dispMin, dispMax, dispStep);

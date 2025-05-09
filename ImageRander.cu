@@ -180,7 +180,7 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
 
     // 初始化 OpenCV 显示窗口 设置为固定值
     namedWindow("Depth", WINDOW_AUTOSIZE);
-    namedWindow("Show", WINDOW_AUTOSIZE);
+    //namedWindow("Show", WINDOW_AUTOSIZE);
     namedWindow("Original", WINDOW_NORMAL);
     resizeWindow("Original", 1080, 1920);
 
@@ -259,7 +259,7 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
         
         imshow("Show", randerDisMapU8); 
 
-        /*randerDisMap = Mat(randerMapHeightVal, randerMapWidthVal, CV_32FC1);
+        randerDisMap = Mat(randerMapHeightVal, randerMapWidthVal, CV_32FC1);
         CUDA_CHECK(cudaMemset(d_randerMap, 0, randerMapWidthVal_ * randerMapHeightVal * 3 * sizeof(float)));  
         cudaMemset(d_randerCount, 0, randerMapWidthVal_ * randerMapHeightVal * sizeof(float));
         imageRander(rawImageParameter, microImageParameter, d_rawDisp, 1);    
@@ -272,9 +272,13 @@ void ImageRander::imageRanderWithOutMask(const DataParameter &dataParameter) {
         randerDisMap(Rect(x_left, y_top, x_right - x_left, y_below - y_top)).convertTo(
             randerDisMapU8, CV_8UC1, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
         Mat coloredFrame;
-        applyColorMap(randerDisMapU8, coloredFrame, COLORMAP_JET);      
+        applyColorMap(randerDisMapU8, coloredFrame, COLORMAP_JET); 
+
+        // 在 Depth 图像上叠加 FPS
+        cv::putText(coloredFrame, fpsText, cv::Point(20, 40), 
+                cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
         // 显示伪彩色帧
-        imshow("Depth", randerDisMapU8);   */
+        imshow("Depth", coloredFrame);   
 
         // 保存图像序列（替代视频写入）
         /*if (saveImages) {
@@ -789,3 +793,4 @@ void ImageRander::outputSparseSceneDepth(string folderName, cv::Mat &sceneSparse
 	ofs1.close();
 	ofs2.close();
 }
+
